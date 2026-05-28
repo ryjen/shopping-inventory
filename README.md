@@ -152,7 +152,12 @@ Potential implementation paths:
 - [ADR-0002: Raw imports are append-only evidence](docs/decisions/ADR-0002-raw-imports-are-append-only-evidence.md)
 - [ADR-0003: Coarse probabilistic stock estimation](docs/decisions/ADR-0003-coarse-probabilistic-stock-estimation.md)
 - [ADR-0004: Apps Script vs n8n automation](docs/decisions/ADR-0004-apps-script-vs-n8n.md)
-- [ADR-0005: Defer backend provider selection](docs/decisions/ADR-0005-supabase-migration-path.md)
+- [ADR-0005: Defer backend provider selection](docs/decisions/ADR-0005-defer-backend-provider-selection.md)
+
+### Planning and runbooks
+
+- [Next steps](docs/planning/next-steps.md)
+- [Manual receipt ingestion runbook](docs/runbooks/manual-receipt-ingestion.md)
 
 ### Schemas
 
@@ -177,6 +182,7 @@ Potential implementation paths:
 
 - [Threat model and privacy considerations](docs/security/threat-model-and-privacy.md)
 - [OCR normalization evaluation corpus](docs/evaluation/ocr-normalization-corpus.md)
+- [Evaluation fixtures](evaluation/README.md)
 
 ## Status
 
