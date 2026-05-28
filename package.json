@@ -5,8 +5,11 @@
   "description": "Personal shopping inventory planning and automation artifacts.",
   "type": "module",
   "scripts": {
-    "test": "node test/n8n-workflows.test.mjs",
-    "test:n8n": "node test/n8n-workflows.test.mjs",
+    "test": "node --test test/*.test.mjs",
+    "test:n8n": "node --test test/n8n-*.test.mjs",
+    "test:n8n:unit": "node --test test/n8n-code-nodes.test.mjs",
+    "test:n8n:integration": "node --test test/n8n-workflows.test.mjs test/n8n-workflow-simulation.test.mjs",
+    "test:n8n:e2e": "node --test test/n8n-workflow-simulation.test.mjs",
     "test:n8n:import": "bash scripts/test-n8n-import.sh"
   },
   "engines": {
