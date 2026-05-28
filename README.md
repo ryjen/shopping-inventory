@@ -140,7 +140,8 @@ Potential implementation paths:
 - ChatGPT + Google Sheets direct updates for manual/low-code MVP
 - Google Apps Script for sheet-native normalization and rollups
 - n8n for scheduled Gmail, Amazon/order email, and flyer ingestion
-- Supabase/Postgres later if spreadsheet limits become painful
+- SQLite or PocketBase later if spreadsheet limits become painful
+- Hosted Postgres/Supabase-style platforms remain candidates, not defaults
 
 ## Documentation
 
@@ -151,7 +152,7 @@ Potential implementation paths:
 - [ADR-0002: Raw imports are append-only evidence](docs/decisions/ADR-0002-raw-imports-are-append-only-evidence.md)
 - [ADR-0003: Coarse probabilistic stock estimation](docs/decisions/ADR-0003-coarse-probabilistic-stock-estimation.md)
 - [ADR-0004: Apps Script vs n8n automation](docs/decisions/ADR-0004-apps-script-vs-n8n.md)
-- [ADR-0005: Supabase/Postgres migration path](docs/decisions/ADR-0005-supabase-migration-path.md)
+- [ADR-0005: Defer backend provider selection](docs/decisions/ADR-0005-supabase-migration-path.md)
 
 ### Schemas
 
@@ -167,6 +168,10 @@ Potential implementation paths:
 - [Inventory decay heuristics](docs/specs/inventory-decay-heuristics.md)
 - [Recommendation engine architecture](docs/specs/recommendation-engine.md)
 - [Budget export mappings and categories](docs/specs/budget-export-mappings.md)
+
+### Research
+
+- [Backend provider requirements and evaluation](docs/research/provider-requirements.md)
 
 ### Security and evaluation
 
