@@ -1,0 +1,4 @@
+{"case_id":"receipt_banana_abbrev_001","source_type":"receipt_photo","merchant_normalized":"Example Grocer","raw_line_text":"BNNAS 1.23KG 2.69","expected_behavior":"promote","notes":"Common produce abbreviation with clear quantity and price"}
+{"case_id":"receipt_milk_clear_001","source_type":"receipt_photo","merchant_normalized":"Example Grocer","raw_line_text":"2% MILK 4L 5.79","expected_behavior":"promote","notes":"Clear staple item with package size"}
+{"case_id":"receipt_ambiguous_org_001","source_type":"receipt_photo","merchant_normalized":"Example Grocer","raw_line_text":"ORG GRN 3.49","expected_behavior":"review","notes":"Ambiguous abbreviation should not silently canonicalize"}
+{"case_id":"receipt_missing_price_001","source_type":"receipt_photo","merchant_normalized":"Example Grocer","raw_line_text":"FRM TOFU","expected_behavior":"review","notes":"Missing price should require review or explicit acceptance"}
