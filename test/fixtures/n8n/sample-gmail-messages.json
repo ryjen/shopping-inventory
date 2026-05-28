@@ -1,0 +1,30 @@
+{
+  "orders": [
+    {
+      "id": "msg-order-001",
+      "threadId": "thread-order-001",
+      "subject": "Your Save-On-Foods receipt",
+      "from": "Save-On-Foods <receipts@example.test>",
+      "snippet": "Thanks for shopping. Milk 2L, eggs, bananas. Total CAD 34.21",
+      "date": "2026-05-26T18:42:00.000Z"
+    },
+    {
+      "id": "msg-order-002",
+      "threadId": "thread-order-002",
+      "subject": "Amazon.ca order delivered",
+      "from": "Amazon.ca <shipment-tracking@example.test>",
+      "snippet": "Delivered: cat litter and batteries",
+      "date": "2026-05-25T16:10:00.000Z"
+    }
+  ],
+  "deals": [
+    {
+      "id": "msg-deal-001",
+      "threadId": "thread-deal-001",
+      "subject": "Weekly flyer deals",
+      "from": "Local Grocer <deals@example.test>",
+      "snippet": "Bananas, coffee, and detergent on sale this week",
+      "date": "2026-05-26T09:00:00.000Z"
+    }
+  ]
+}
