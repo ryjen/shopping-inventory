@@ -1,0 +1,3 @@
+{"case_id":"receipt_ambiguous_org_001","action":"review","reason_code":"ambiguous_alias","raw_item_text":"ORG GRN","suggested_canonical_item_id":null,"confidence":0.4,"decision_notes":"Abbreviation is ambiguous and should not silently canonicalize"}
+{"case_id":"receipt_missing_price_001","action":"review","reason_code":"missing_price","raw_item_text":"FRM TOFU","suggested_canonical_item_id":"tofu_firm","confidence":0.65,"decision_notes":"Item may be firm tofu but missing price requires review"}
+{"case_id":"order_duplicate_receipt_001","action":"review","reason_code":"possible_duplicate","raw_item_text":"2% Milk 4L","suggested_canonical_item_id":"milk_2_percent","confidence":0.8,"decision_notes":"Potential duplicate across email receipt and receipt photo import"}
