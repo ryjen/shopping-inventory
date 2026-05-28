@@ -144,10 +144,34 @@ Potential implementation paths:
 
 ## Documentation
 
+### Architecture and decisions
+
 - [Architecture](docs/architecture.md)
 - [ADR-0001: Spreadsheet-first low-code substrate](docs/decisions/ADR-0001-spreadsheet-first-low-code-substrate.md)
 - [ADR-0002: Raw imports are append-only evidence](docs/decisions/ADR-0002-raw-imports-are-append-only-evidence.md)
 - [ADR-0003: Coarse probabilistic stock estimation](docs/decisions/ADR-0003-coarse-probabilistic-stock-estimation.md)
+- [ADR-0004: Apps Script vs n8n automation](docs/decisions/ADR-0004-apps-script-vs-n8n.md)
+- [ADR-0005: Supabase/Postgres migration path](docs/decisions/ADR-0005-supabase-migration-path.md)
+
+### Schemas
+
+- [Sheet schema overview](docs/schema/README.md)
+- [Raw import schemas](docs/schema/raw-imports.md)
+- [Ledger and derived schemas](docs/schema/ledger-and-derived.md)
+
+### Specifications
+
+- [Normalization pipeline](docs/specs/normalization-pipeline.md)
+- [Item aliasing and canonicalization](docs/specs/aliasing-canonicalization.md)
+- [Receipt ingestion prompt contracts](docs/specs/receipt-ingestion-prompt-contracts.md)
+- [Inventory decay heuristics](docs/specs/inventory-decay-heuristics.md)
+- [Recommendation engine architecture](docs/specs/recommendation-engine.md)
+- [Budget export mappings and categories](docs/specs/budget-export-mappings.md)
+
+### Security and evaluation
+
+- [Threat model and privacy considerations](docs/security/threat-model-and-privacy.md)
+- [OCR normalization evaluation corpus](docs/evaluation/ocr-normalization-corpus.md)
 
 ## Status
 
