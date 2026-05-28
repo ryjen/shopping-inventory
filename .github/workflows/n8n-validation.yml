@@ -1,0 +1,65 @@
+name: n8n workflow validation
+
+on:
+  pull_request:
+    paths:
+      - 'automation/n8n/**'
+      - 'scripts/test-n8n-import.sh'
+      - 'test/n8n-workflows.test.mjs'
+      - 'package.json'
+      - '.github/workflows/n8n-validation.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'automation/n8n/**'
+      - 'scripts/test-n8n-import.sh'
+      - 'test/n8n-workflows.test.mjs'
+      - 'package.json'
+      - '.github/workflows/n8n-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-workflow-tests:
+    name: Static workflow invariant tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run static workflow tests
+        run: npm test
+
+  n8n-cli-import-smoke-test:
+    name: n8n CLI import smoke test
+    runs-on: ubuntu-latest
+    needs: static-workflow-tests
+
+    env:
+      DB_TYPE: sqlite
+      DB_SQLITE_POOL_SIZE: '1'
+      N8N_ENCRYPTION_KEY: shopping-inventory-ci-test-key
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install n8n CLI
+        run: npm install -g n8n
+
+      - name: Import workflow exports with n8n CLI
+        run: npm run test:n8n:import
