@@ -96,6 +96,34 @@ Useful future refinements:
 - label processed messages after successful append
 - store full raw message payload references outside the sheet
 
+## Tests
+
+Run the repo-local workflow invariant tests:
+
+```bash
+npm test
+```
+
+These tests validate:
+
+- workflow JSON can be parsed
+- node names and ids are unique
+- connection targets exist
+- Google Sheets nodes are append-only
+- workflows do not write directly to `Purchases`, `Stock`, or `Budget_Export`
+- scheduled triggers are disabled in checked-in exports
+- Code nodes avoid environment-sensitive imports such as `require(...)`
+- exported workflow files do not contain obvious credential material
+
+Run the optional n8n CLI import smoke test after installing n8n:
+
+```bash
+npm install -g n8n
+npm run test:n8n:import
+```
+
+The CLI smoke test imports every `*.n8n.json` workflow under this directory into an isolated local n8n user folder using SQLite. It does not execute external Gmail or Google Sheets calls.
+
 ## Guardrails
 
 - Do not write directly to `Purchases`
