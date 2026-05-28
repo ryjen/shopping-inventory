@@ -1,0 +1,4 @@
+alias_id,raw_pattern,pattern_type,merchant_scope,canonical_item_id,canonical_item_name,category_primary,category_secondary,is_perishable,default_decay_days,confidence,status,notes
+alias_bananas_001,BNNAS,exact,Example Grocer,bananas,Bananas,groceries.produce,fruit,true,5,0.95,active,Common receipt abbreviation
+alias_milk_2_percent_001,2% MILK,contains,,milk_2_percent,"Milk, 2%",groceries.dairy_eggs,milk,true,10,0.95,active,Staple dairy item
+alias_cat_litter_001,Cat Litter,contains,,cat_litter,Cat litter,pet.supplies,litter,false,30,0.95,active,Pet supply cadence item
