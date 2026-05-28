@@ -98,13 +98,43 @@ Useful future refinements:
 
 ## Tests
 
-Run the repo-local workflow invariant tests:
+Run all repository tests:
 
 ```bash
 npm test
 ```
 
-These tests validate:
+Run only n8n tests:
+
+```bash
+npm run test:n8n
+```
+
+### Unit tests
+
+```bash
+npm run test:n8n:unit
+```
+
+Unit tests execute the actual JavaScript embedded in n8n Code nodes with fixture Gmail messages from `test/fixtures/n8n/sample-gmail-messages.json`.
+
+They validate that:
+
+- `Prepare Orders_Raw rows` emits reviewable `Orders_Raw` rows
+- `Prepare Deals_Raw rows` emits reviewable `Deals_Raw` rows
+- deterministic ids and dedupe keys are stable for the same source messages
+- low-confidence raw evidence rows do not look authoritative
+- stock or budget state is not emitted by ingestion code
+
+### Integration tests
+
+```bash
+npm run test:n8n:integration
+```
+
+Integration tests inspect the exported n8n workflow graph and data-contract boundaries.
+
+They validate that:
 
 - workflow JSON can be parsed
 - node names and ids are unique
@@ -114,6 +144,26 @@ These tests validate:
 - scheduled triggers are disabled in checked-in exports
 - Code nodes avoid environment-sensitive imports such as `require(...)`
 - exported workflow files do not contain obvious credential material
+- the manual-trigger path reaches both raw ingestion lanes
+
+### E2E simulation tests
+
+```bash
+npm run test:n8n:e2e
+```
+
+The e2e layer is a local simulation, not a live Gmail/Sheets run.
+
+It walks the exported workflow graph from `Manual trigger` and verifies that:
+
+- the terminal write nodes are `Append Orders_Raw` and `Append Deals_Raw`
+- external read boundaries are Gmail nodes only
+- external write boundaries are Google Sheets append nodes only
+- the workflow does not route into authoritative state
+
+This gives useful regression coverage without requiring live credentials or mutating real spreadsheets.
+
+### n8n CLI import smoke test
 
 Run the optional n8n CLI import smoke test after installing n8n:
 
@@ -123,6 +173,17 @@ npm run test:n8n:import
 ```
 
 The CLI smoke test imports every `*.n8n.json` workflow under this directory into an isolated local n8n user folder using SQLite. It does not execute external Gmail or Google Sheets calls.
+
+## CI
+
+`.github/workflows/n8n-validation.yml` runs:
+
+1. n8n unit tests
+2. n8n integration tests
+3. n8n e2e simulation tests
+4. n8n CLI import smoke test
+
+The CLI smoke test runs after the faster local tests pass.
 
 ## Guardrails
 
@@ -142,6 +203,7 @@ The CLI smoke test imports every `*.n8n.json` workflow under this directory into
 - Current workflow creates email-level candidate rows, not item-level rows
 - Dedupe is represented with a `dedupe_key`, but not enforced by the starter workflow
 - Scheduled trigger is disabled by default
+- Current e2e test is a local graph/data-boundary simulation, not a live external-system test
 
 ## Next workflow candidates
 
