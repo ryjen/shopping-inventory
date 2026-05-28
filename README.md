@@ -197,6 +197,11 @@ Potential implementation paths:
 - [Recommendation engine architecture](docs/specs/recommendation-engine.md)
 - [Budget export mappings and categories](docs/specs/budget-export-mappings.md)
 
+### Automation
+
+- [n8n automation workflows](automation/n8n/README.md)
+- [Shopping ingestion starter workflow](automation/n8n/shopping-ingestion-starter.n8n.json)
+
 ### Research
 
 - [Backend provider requirements and evaluation](docs/research/provider-requirements.md)
