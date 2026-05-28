@@ -1,0 +1,2 @@
+{"case_id":"order_cat_litter_001","source_type":"ecommerce_order","source_system":"Example Store","raw_line_text":"Unscented Cat Litter 18kg","expected_behavior":"promote","notes":"Non-food household/pet supply with clear canonical target"}
+{"case_id":"order_duplicate_receipt_001","source_type":"email_receipt","source_system":"Example Store","raw_line_text":"2% Milk 4L","expected_behavior":"review","notes":"Used to test duplicate risk against a receipt import"}
