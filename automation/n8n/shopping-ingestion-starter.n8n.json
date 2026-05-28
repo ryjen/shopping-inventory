@@ -1,0 +1,367 @@
+{
+  "name": "Shopping inventory ingestion starter",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -900,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "weeksInterval": 1,
+              "triggerAtDay": [
+                0
+              ],
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "id": "weekly-schedule",
+      "name": "Weekly schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -900,
+        120
+      ],
+      "disabled": true,
+      "notes": "Enable after the Google Sheet, Gmail credentials, and search queries are configured."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "spreadsheet-id",
+              "name": "spreadsheetId",
+              "value": "TODO_GOOGLE_SHEET_ID",
+              "type": "string"
+            },
+            {
+              "id": "orders-sheet",
+              "name": "ordersSheetName",
+              "value": "Orders_Raw",
+              "type": "string"
+            },
+            {
+              "id": "deals-sheet",
+              "name": "dealsSheetName",
+              "value": "Deals_Raw",
+              "type": "string"
+            },
+            {
+              "id": "gmail-order-query",
+              "name": "gmailOrderQuery",
+              "value": "newer_than:14d (receipt OR order OR invoice OR shipped OR delivered) -category:promotions",
+              "type": "string"
+            },
+            {
+              "id": "gmail-deal-query",
+              "name": "gmailDealQuery",
+              "value": "newer_than:7d (sale OR flyer OR coupon OR offer OR promo OR deals)",
+              "type": "string"
+            },
+            {
+              "id": "extractor-name",
+              "name": "extractor",
+              "value": "n8n.shopping-ingestion-starter.v0",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "configuration",
+      "name": "Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -620,
+        -20
+      ],
+      "notes": "Central placeholders. Do not hard-code secrets in this workflow export."
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "returnAll": false,
+        "limit": 25,
+        "filters": {
+          "q": "={{ $json.gmailOrderQuery }}"
+        },
+        "options": {}
+      },
+      "id": "search-order-emails",
+      "name": "Search receipt/order emails",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -340,
+        -160
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "TODO",
+          "name": "TODO Gmail OAuth2"
+        }
+      },
+      "notes": "Tune the Gmail query before enabling the schedule. This should collect candidate evidence only."
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "returnAll": false,
+        "limit": 25,
+        "filters": {
+          "q": "={{ $json.gmailDealQuery }}"
+        },
+        "options": {}
+      },
+      "id": "search-deal-emails",
+      "name": "Search deal/promo emails",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -340,
+        120
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "TODO",
+          "name": "TODO Gmail OAuth2"
+        }
+      },
+      "notes": "Deals are appended to Deals_Raw, not Purchases."
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date().toISOString();\nconst config = $('Configuration').first().json;\n\nfunction cleanText(value) {\n  return String(value ?? '')\n    .replace(/\\s+/g, ' ')\n    .trim();\n}\n\nfunction stableId(prefix, value) {\n  const crypto = require('crypto');\n  const hash = crypto.createHash('sha256').update(String(value)).digest('hex').slice(0, 16);\n  return `${prefix}_${hash}`;\n}\n\nreturn items.map((item, index) => {\n  const message = item.json;\n  const messageId = message.id || message.messageId || message.threadId || `unknown_${index}`;\n  const sourceUri = messageId === `unknown_${index}` ? '' : `gmail://message/${messageId}`;\n  const subject = cleanText(message.subject);\n  const from = cleanText(message.from || message.sender || '');\n  const snippet = cleanText(message.snippet || message.textPlain || message.textHtml || '');\n  const rawText = [subject, from, snippet].filter(Boolean).join(' | ');\n\n  return {\n    json: {\n      order_import_id: stableId('order_import', messageId),\n      order_id: message.threadId || messageId,\n      source_type: 'email_receipt',\n      source_system: 'gmail',\n      source_uri: sourceUri,\n      merchant_raw: from,\n      merchant_normalized: '',\n      ordered_at_raw: message.date || message.internalDate || '',\n      ordered_at: '',\n      delivered_at: '',\n      item_text_raw: rawText || subject || 'UNPARSED_EMAIL',\n      quantity_raw: '',\n      unit_raw: '',\n      price_amount: '',\n      currency: 'CAD',\n      category_hint_raw: '',\n      extractor: config.extractor,\n      extracted_at: now,\n      parse_confidence: 0.25,\n      ambiguity_notes: 'Candidate email import. Needs parsing/review before promotion.',\n      dedupe_key: stableId('gmail_order', `${messageId}|${subject}`),\n      review_state: 'new'\n    }\n  };\n});"
+      },
+      "id": "prepare-orders-raw-rows",
+      "name": "Prepare Orders_Raw rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -40,
+        -160
+      ],
+      "notes": "Conservative transform: one email becomes one raw candidate row. Later parsing can split item lines."
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date().toISOString();\nconst config = $('Configuration').first().json;\n\nfunction cleanText(value) {\n  return String(value ?? '')\n    .replace(/\\s+/g, ' ')\n    .trim();\n}\n\nfunction stableId(prefix, value) {\n  const crypto = require('crypto');\n  const hash = crypto.createHash('sha256').update(String(value)).digest('hex').slice(0, 16);\n  return `${prefix}_${hash}`;\n}\n\nreturn items.map((item, index) => {\n  const message = item.json;\n  const messageId = message.id || message.messageId || message.threadId || `unknown_${index}`;\n  const sourceUri = messageId === `unknown_${index}` ? '' : `gmail://message/${messageId}`;\n  const subject = cleanText(message.subject);\n  const from = cleanText(message.from || message.sender || '');\n  const snippet = cleanText(message.snippet || message.textPlain || message.textHtml || '');\n  const rawText = [subject, snippet].filter(Boolean).join(' | ');\n\n  return {\n    json: {\n      deal_import_id: stableId('deal_import', messageId),\n      source_type: 'email_promo',\n      source_system: 'gmail',\n      source_uri: sourceUri,\n      merchant_raw: from,\n      merchant_normalized: '',\n      item_text_raw: rawText || subject || 'UNPARSED_DEAL_EMAIL',\n      deal_price_amount: '',\n      currency: 'CAD',\n      unit_raw: '',\n      effective_start_at: '',\n      effective_end_at: '',\n      conditions_raw: '',\n      extractor: config.extractor,\n      extracted_at: now,\n      parse_confidence: 0.2,\n      ambiguity_notes: 'Candidate deal email. Needs parsing/review before use in recommendations.',\n      review_state: 'new'\n    }\n  };\n});"
+      },
+      "id": "prepare-deals-raw-rows",
+      "name": "Prepare Deals_Raw rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -40,
+        120
+      ],
+      "notes": "Deals are evidence for recommendations, not purchases."
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Configuration').first().json.spreadsheetId }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Configuration').first().json.ordersSheetName }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {}
+        },
+        "options": {}
+      },
+      "id": "append-orders-raw",
+      "name": "Append Orders_Raw",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        260,
+        -160
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "TODO",
+          "name": "TODO Google Sheets OAuth2"
+        }
+      },
+      "notes": "Append only. Do not overwrite raw evidence rows."
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Configuration').first().json.spreadsheetId }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Configuration').first().json.dealsSheetName }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {}
+        },
+        "options": {}
+      },
+      "id": "append-deals-raw",
+      "name": "Append Deals_Raw",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        260,
+        120
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "TODO",
+          "name": "TODO Google Sheets OAuth2"
+        }
+      },
+      "notes": "Append only. Review before using deal rows in recommendations."
+    },
+    {
+      "parameters": {
+        "content": "## Review boundary\n\nThis workflow intentionally appends to `Orders_Raw` and `Deals_Raw` only. It does not write to `Purchases`, `Stock`, or `Budget_Export`.\n\nPromotion into authoritative state should happen through review/promotion logic, not direct email automation.",
+        "height": 220,
+        "width": 420
+      },
+      "id": "review-boundary-note",
+      "name": "Review boundary note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        -420
+      ]
+    }
+  ],
+  "connections": {
+    "Manual trigger": {
+      "main": [
+        [
+          {
+            "node": "Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekly schedule": {
+      "main": [
+        [
+          {
+            "node": "Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configuration": {
+      "main": [
+        [
+          {
+            "node": "Search receipt/order emails",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Search deal/promo emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search receipt/order emails": {
+      "main": [
+        [
+          {
+            "node": "Prepare Orders_Raw rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search deal/promo emails": {
+      "main": [
+        [
+          {
+            "node": "Prepare Deals_Raw rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Orders_Raw rows": {
+      "main": [
+        [
+          {
+            "node": "Append Orders_Raw",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Deals_Raw rows": {
+      "main": [
+        [
+          {
+            "node": "Append Deals_Raw",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "America/Vancouver"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "shopping-inventory"
+    },
+    {
+      "name": "raw-ingestion"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2026-05-27T00:00:00.000Z",
+  "versionId": "starter"
+}
