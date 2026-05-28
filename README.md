@@ -1,10 +1,29 @@
 # Shopping Inventory
 
-Low-code, AI-assisted grocery and household inventory system built around receipts, email/order imports, Google Sheets, and conservative automation.
+A personal, opinionated grocery and household inventory system built around my receipts, order emails, Google Sheets, and conservative AI-assisted workflows.
+
+This is not trying to be a universal product, SaaS, starter kit, or best-practice template for everyone else. There are many other shopping, pantry, receipt, budgeting, and meal-planning systems like it. This one is mine.
+
+The goal is selfish in the useful sense: reduce my own household friction, understand my actual grocery and household spend, avoid buying duplicates, make better shopping lists, and preserve enough structure that I can automate safely later.
 
 The core idea is simple: receipts and order emails prove acquisition, not possession. The system keeps raw imports immutable, promotes reviewed purchases into an authoritative ledger, estimates current stock probabilistically, and uses that state to support shopping lists, meal planning, deal matching, and budget rollups.
 
-## Use cases
+## Orientation
+
+This repo documents the system I want to operate for myself.
+
+That means:
+
+- personal usefulness beats generality
+- boring workflows beat clever automation
+- Google Sheets is acceptable if it works
+- SQLite or PocketBase are plausible later because they fit a small personal system
+- hosted backends are candidates only if a real need appears
+- raw receipt/order evidence should be preserved
+- AI can assist, but should not silently mutate truth
+- recommendations should explain themselves
+
+## Personal use cases
 
 ### Receipt ingestion
 
@@ -16,8 +35,8 @@ The core idea is simple: receipts and order emails prove acquisition, not posses
 
 ### Grocery purchase ledger
 
-- Track what was bought, when, where, and for how much
-- Normalize messy receipt abbreviations into canonical items
+- Track what I bought, when, where, and for how much
+- Normalize messy receipt abbreviations into canonical items I actually use
 - Separate food, household, pet, personal care, pharmacy, and misc retail
 - Build monthly grocery and household spend summaries
 - Export clean category rollups into a separate budget spreadsheet
@@ -34,7 +53,7 @@ The core idea is simple: receipts and order emails prove acquisition, not posses
 - Suggest replenishment based on staple cadence, recent purchases, estimated stock, meal plans, and budget
 - Avoid recommending items already likely stocked
 - Explain why each item is suggested
-- Support store-specific lists later
+- Support store-specific lists later if useful
 
 ### Meal planning
 
@@ -81,7 +100,9 @@ flowchart LR
 
 This project starts with Google Sheets as the operating datastore, not a custom app.
 
-Recommended tabs:
+That is a deliberate personal constraint. I want the system to be visible, editable, recoverable, and useful before I promote any part of it into code.
+
+Starting tabs:
 
 | Tab | Purpose |
 | --- | --- |
@@ -113,6 +134,7 @@ flowchart TD
 - Stock is derived and probabilistic
 - Recommendations must explain their rationale
 - Budget exports consume authoritative purchases, not raw imports
+- Provider choices should stay reversible until the workflow proves they matter
 
 ## Suggested MVP
 
@@ -140,8 +162,9 @@ Potential implementation paths:
 - ChatGPT + Google Sheets direct updates for manual/low-code MVP
 - Google Apps Script for sheet-native normalization and rollups
 - n8n for scheduled Gmail, Amazon/order email, and flyer ingestion
-- SQLite or PocketBase later if spreadsheet limits become painful
-- Hosted Postgres/Supabase-style platforms remain candidates, not defaults
+- SQLite if the system wants a local, scriptable, durable core
+- PocketBase if a small API/admin/files layer becomes useful
+- Hosted Postgres/Supabase-style platforms only if remote access, auth, or multi-user needs justify the operational weight
 
 ## Documentation
 
@@ -186,4 +209,4 @@ Potential implementation paths:
 
 ## Status
 
-Preliminary architecture and decision documentation. Implementation intentionally starts simple: Google Sheets + AI extraction + reviewable promotion into authoritative purchases.
+Preliminary architecture and decision documentation for a personal system. Implementation intentionally starts simple: Google Sheets + AI extraction + reviewable promotion into authoritative purchases.
