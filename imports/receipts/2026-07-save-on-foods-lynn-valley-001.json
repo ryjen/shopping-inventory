@@ -1,0 +1,63 @@
+{
+  "receipt": {
+    "receipt_id": "rcpt_2026_07_save_on_lynn_valley_001",
+    "merchant_raw": "Save-On-Foods Lynn Valley",
+    "merchant_normalized": "Save-On-Foods",
+    "purchased_at_raw": null,
+    "purchased_at": null,
+    "currency": "CAD",
+    "receipt_total_raw": "$145.30",
+    "receipt_total_amount": 145.30,
+    "confidence": 0.93,
+    "ambiguity_notes": ["Purchase date and time are not visible in the supplied image.", "One feta-cheese product descriptor is partially unclear."]
+  },
+  "lines": [
+    {"line_number":1,"raw_line_text":"BANANAS 0.365 kg @ $1.96/kg 0.72","item_text_raw":"BANANAS","quantity_raw":"0.365","unit_raw":"kg","price_raw":"0.72","price_amount":0.72,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.99,"parse_confidence":0.99,"ambiguity_notes":[]},
+    {"line_number":2,"raw_line_text":"Feta Cheese / Grimms Gar 1c Co1 8.49 / Card $6.99 Save -1.50","item_text_raw":"Feta Cheese - Grimms Gar 1c Co1","quantity_raw":"1","unit_raw":null,"price_raw":"8.49","price_amount":8.49,"tax_raw":null,"discount_raw":"1.50","ocr_confidence":0.72,"parse_confidence":0.84,"ambiguity_notes":["Product descriptor after Feta Cheese is partially unclear; likely Grimm's branded feta."]},
+    {"line_number":3,"raw_line_text":"JELLO Lemon Jelly 1.99","item_text_raw":"JELLO Lemon Jelly","quantity_raw":"1","unit_raw":null,"price_raw":"1.99","price_amount":1.99,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.99,"parse_confidence":0.99,"ambiguity_notes":[]},
+    {"line_number":4,"raw_line_text":"JELL-O Lime Jelly 1.99","item_text_raw":"JELL-O Lime Jelly","quantity_raw":"1","unit_raw":null,"price_raw":"1.99","price_amount":1.99,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.99,"parse_confidence":0.99,"ambiguity_notes":[]},
+    {"line_number":5,"raw_line_text":"JELL-O Orange Jelly 1.99","item_text_raw":"JELL-O Orange Jelly","quantity_raw":"1","unit_raw":null,"price_raw":"1.99","price_amount":1.99,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.99,"parse_confidence":0.99,"ambiguity_notes":[]},
+    {"line_number":6,"raw_line_text":"JELLO Strwbrry Jelly 1.99","item_text_raw":"JELLO Strwbrry Jelly","quantity_raw":"1","unit_raw":null,"price_raw":"1.99","price_amount":1.99,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.98,"parse_confidence":0.98,"ambiguity_notes":[]},
+    {"line_number":7,"raw_line_text":"Kraft Dinner 2 @ 3.19 6.38 / Card 2/$3.00 Save -3.38","item_text_raw":"Kraft Dinner","quantity_raw":"2","unit_raw":"each","price_raw":"6.38","price_amount":6.38,"tax_raw":null,"discount_raw":"3.38","ocr_confidence":0.99,"parse_confidence":0.99,"ambiguity_notes":[]},
+    {"line_number":8,"raw_line_text":"Lean Ground Beef 9.50","item_text_raw":"Lean Ground Beef","quantity_raw":"1","unit_raw":null,"price_raw":"9.50","price_amount":9.50,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.99,"parse_confidence":0.98,"ambiguity_notes":[]},
+    {"line_number":9,"raw_line_text":"MILK 2% JUG 6.35 / RECYCLE FEE 0.07 / DEPOSIT MILK 0.10","item_text_raw":"MILK 2% JUG","quantity_raw":"1","unit_raw":"jug","price_raw":"6.35","price_amount":6.35,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.99,"parse_confidence":0.98,"ambiguity_notes":["Receipt also includes $0.07 recycling fee and $0.10 deposit."]},
+    {"line_number":10,"raw_line_text":"Ocean Spray 8.99 / Deposit 0.10 / Recycle Fee 0.07 G","item_text_raw":"Ocean Spray","quantity_raw":"1","unit_raw":null,"price_raw":"8.99","price_amount":8.99,"tax_raw":"G","discount_raw":null,"ocr_confidence":0.98,"parse_confidence":0.95,"ambiguity_notes":["Specific Ocean Spray product is not visible; receipt also includes $0.10 deposit and $0.07 recycling fee."]},
+    {"line_number":11,"raw_line_text":"Purex Ultra Tpl Roll 11.99 B / Card $7.99 Save -4.00","item_text_raw":"Purex Ultra Tpl Roll","quantity_raw":"1","unit_raw":null,"price_raw":"11.99","price_amount":11.99,"tax_raw":"B","discount_raw":"4.00","ocr_confidence":0.96,"parse_confidence":0.94,"ambiguity_notes":["Likely toilet paper; raw abbreviation preserved."]},
+    {"line_number":12,"raw_line_text":"Rsns Thompson Dried 0.280 kg @ $14.90/kg 4.17","item_text_raw":"Rsns Thompson Dried","quantity_raw":"0.280","unit_raw":"kg","price_raw":"4.17","price_amount":4.17,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.98,"parse_confidence":0.98,"ambiguity_notes":["Likely Thompson raisins; raw abbreviation preserved."]},
+    {"line_number":13,"raw_line_text":"Smoked Turkey Breast 7.00","item_text_raw":"Smoked Turkey Breast","quantity_raw":"1","unit_raw":null,"price_raw":"7.00","price_amount":7.00,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.99,"parse_confidence":0.98,"ambiguity_notes":[]},
+    {"line_number":14,"raw_line_text":"SpngTwl Ultra Dbl31 11.99 B / Card $7.99 Save -4.00","item_text_raw":"SpngTwl Ultra Dbl31","quantity_raw":"1","unit_raw":null,"price_raw":"11.99","price_amount":11.99,"tax_raw":"B","discount_raw":"4.00","ocr_confidence":0.95,"parse_confidence":0.94,"ambiguity_notes":["Likely SpongeTowels Ultra double rolls; raw abbreviation preserved."]},
+    {"line_number":15,"raw_line_text":"Triscuit Dill SS Olv 3.99 / Card 2/$6.00 Save -0.99","item_text_raw":"Triscuit Dill SS Olv","quantity_raw":"1","unit_raw":null,"price_raw":"3.99","price_amount":3.99,"tax_raw":null,"discount_raw":"0.99","ocr_confidence":0.96,"parse_confidence":0.95,"ambiguity_notes":[]},
+    {"line_number":16,"raw_line_text":"Triscuit Low Sodium 3.99 / Card 2/$6.00 Save -0.99","item_text_raw":"Triscuit Low Sodium","quantity_raw":"1","unit_raw":null,"price_raw":"3.99","price_amount":3.99,"tax_raw":null,"discount_raw":"0.99","ocr_confidence":0.99,"parse_confidence":0.98,"ambiguity_notes":[]},
+    {"line_number":17,"raw_line_text":"Water Refill 7.5L 1.99","item_text_raw":"Water Refill 7.5L","quantity_raw":"7.5","unit_raw":"L","price_raw":"1.99","price_amount":1.99,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.99,"parse_confidence":0.98,"ambiguity_notes":[]},
+    {"line_number":18,"raw_line_text":"WF Black Beans 2.19","item_text_raw":"WF Black Beans","quantity_raw":"1","unit_raw":null,"price_raw":"2.19","price_amount":2.19,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.99,"parse_confidence":0.99,"ambiguity_notes":[]},
+    {"line_number":19,"raw_line_text":"WF Black Beans 2.19","item_text_raw":"WF Black Beans","quantity_raw":"1","unit_raw":null,"price_raw":"2.19","price_amount":2.19,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.99,"parse_confidence":0.99,"ambiguity_notes":[]},
+    {"line_number":20,"raw_line_text":"WF Brocli CutFl 4.69","item_text_raw":"WF Brocli CutFl","quantity_raw":"1","unit_raw":null,"price_raw":"4.69","price_amount":4.69,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.96,"parse_confidence":0.95,"ambiguity_notes":["Likely Western Family broccoli cuts/florets; raw abbreviation preserved."]},
+    {"line_number":21,"raw_line_text":"WF Chicken Noodl Sp 1.99 / Card $1.79 Save -0.20","item_text_raw":"WF Chicken Noodl Sp","quantity_raw":"1","unit_raw":null,"price_raw":"1.99","price_amount":1.99,"tax_raw":null,"discount_raw":"0.20","ocr_confidence":0.98,"parse_confidence":0.97,"ambiguity_notes":[]},
+    {"line_number":22,"raw_line_text":"WF Cream Cheese 3.99","item_text_raw":"WF Cream Cheese","quantity_raw":"1","unit_raw":null,"price_raw":"3.99","price_amount":3.99,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.99,"parse_confidence":0.99,"ambiguity_notes":[]},
+    {"line_number":23,"raw_line_text":"WF Extra Large Eggs 4.79","item_text_raw":"WF Extra Large Eggs","quantity_raw":"1","unit_raw":null,"price_raw":"4.79","price_amount":4.79,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.99,"parse_confidence":0.99,"ambiguity_notes":[]},
+    {"line_number":24,"raw_line_text":"WF Mayo Olive Oil 6.79 / Card $5.89 Save -0.90","item_text_raw":"WF Mayo Olive Oil","quantity_raw":"1","unit_raw":null,"price_raw":"6.79","price_amount":6.79,"tax_raw":null,"discount_raw":"0.90","ocr_confidence":0.99,"parse_confidence":0.98,"ambiguity_notes":[]},
+    {"line_number":25,"raw_line_text":"WF PINEAPPLE TIDBITE 2.79","item_text_raw":"WF PINEAPPLE TIDBITE","quantity_raw":"1","unit_raw":null,"price_raw":"2.79","price_amount":2.79,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.99,"parse_confidence":0.99,"ambiguity_notes":[]},
+    {"line_number":26,"raw_line_text":"WF PINEAPPLE TIDBITE 2.79","item_text_raw":"WF PINEAPPLE TIDBITE","quantity_raw":"1","unit_raw":null,"price_raw":"2.79","price_amount":2.79,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.99,"parse_confidence":0.99,"ambiguity_notes":[]},
+    {"line_number":27,"raw_line_text":"WF Quick Oats 4.69","item_text_raw":"WF Quick Oats","quantity_raw":"1","unit_raw":null,"price_raw":"4.69","price_amount":4.69,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.99,"parse_confidence":0.99,"ambiguity_notes":[]},
+    {"line_number":28,"raw_line_text":"WF Unsalted Butter 7.49","item_text_raw":"WF Unsalted Butter","quantity_raw":"1","unit_raw":null,"price_raw":"7.49","price_amount":7.49,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.99,"parse_confidence":0.99,"ambiguity_notes":[]},
+    {"line_number":29,"raw_line_text":"WF Veg Instnt Noodle 0.69","item_text_raw":"WF Veg Instnt Noodle","quantity_raw":"1","unit_raw":null,"price_raw":"0.69","price_amount":0.69,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.98,"parse_confidence":0.97,"ambiguity_notes":[]},
+    {"line_number":30,"raw_line_text":"WF Vegetable Soup 1.99 / Card $1.79 Save -0.20","item_text_raw":"WF Vegetable Soup","quantity_raw":"1","unit_raw":null,"price_raw":"1.99","price_amount":1.99,"tax_raw":null,"discount_raw":"0.20","ocr_confidence":0.99,"parse_confidence":0.99,"ambiguity_notes":[]},
+    {"line_number":31,"raw_line_text":"WF Water 7.49 G / Card $5.99 Save -1.50 / DEPOSIT 1.20","item_text_raw":"WF Water","quantity_raw":"1","unit_raw":null,"price_raw":"7.49","price_amount":7.49,"tax_raw":"G","discount_raw":"1.50","ocr_confidence":0.98,"parse_confidence":0.96,"ambiguity_notes":["Receipt also includes $1.20 deposit."]},
+    {"line_number":32,"raw_line_text":"White Bread 2.99","item_text_raw":"White Bread","quantity_raw":"1","unit_raw":null,"price_raw":"2.99","price_amount":2.99,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.99,"parse_confidence":0.99,"ambiguity_notes":[]},
+    {"line_number":33,"raw_line_text":"White Onions 4663 0.210 kg @ $6.59/kg 1.38","item_text_raw":"White Onions 4663","quantity_raw":"0.210","unit_raw":"kg","price_raw":"1.38","price_amount":1.38,"tax_raw":null,"discount_raw":null,"ocr_confidence":0.99,"parse_confidence":0.99,"ambiguity_notes":[]}
+  ],
+  "totals": {
+    "subtotal": 143.08,
+    "gst_taxable_value": 22.04,
+    "gst": 1.10,
+    "pst_taxable_value": 15.98,
+    "pst": 1.12,
+    "balance_due": 145.30
+  },
+  "source": {
+    "source_type": "receipt_photo",
+    "extractor": "ChatGPT",
+    "review_state": "new",
+    "privacy": "payment card fragment and transaction authorization details omitted"
+  }
+}
