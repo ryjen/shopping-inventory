@@ -1,23 +1,29 @@
-name: n8n workflow validation
+name: Repository validation
 
 on:
   pull_request:
     paths:
       - 'automation/n8n/**'
+      - 'src/**'
+      - 'migrations/**'
       - 'scripts/test-n8n-import.sh'
       - 'test/**/*.mjs'
       - 'test/fixtures/n8n/**'
       - 'package.json'
+      - 'wrangler.toml'
       - '.github/workflows/n8n-validation.yml'
   push:
     branches:
       - main
     paths:
       - 'automation/n8n/**'
+      - 'src/**'
+      - 'migrations/**'
       - 'scripts/test-n8n-import.sh'
       - 'test/**/*.mjs'
       - 'test/fixtures/n8n/**'
       - 'package.json'
+      - 'wrangler.toml'
       - '.github/workflows/n8n-validation.yml'
   workflow_dispatch:
 
@@ -25,8 +31,8 @@ permissions:
   contents: read
 
 jobs:
-  n8n-layered-tests:
-    name: n8n unit, integration, and e2e simulation tests
+  repository-tests:
+    name: n8n and Cloudflare unit/integration tests
     runs-on: ubuntu-latest
 
     steps:
@@ -47,10 +53,13 @@ jobs:
       - name: Run n8n e2e simulation tests
         run: npm run test:n8n:e2e
 
+      - name: Run Cloudflare storage tests
+        run: npm run test:cloudflare
+
   n8n-cli-import-smoke-test:
     name: n8n CLI import smoke test
     runs-on: ubuntu-latest
-    needs: n8n-layered-tests
+    needs: repository-tests
 
     env:
       DB_TYPE: sqlite

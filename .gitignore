@@ -1,0 +1,22 @@
+# Private/local data
+.private/
+private/
+data/private/
+receipts/private/
+exports/private/
+*.private.json
+*.private.csv
+*.private.sqlite
+*.db-wal
+*.db-shm
+
+# Cloudflare local state and secrets
+.wrangler/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+wrangler.private.toml
+
+# Node
+node_modules/
+npm-debug.log*
