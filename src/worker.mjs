@@ -1,5 +1,17 @@
-const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
+const JSON_HEADERS = {
+  "content-type": "application/json; charset=utf-8",
+  "cache-control": "private, no-store",
+};
 const MAX_RECEIPT_BYTES = 10 * 1024 * 1024;
+const ALLOWED_RECEIPT_TYPES = new Set([
+  "application/pdf",
+  "image/gif",
+  "image/heic",
+  "image/heif",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
 
 function json(status, body) {
   return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
@@ -21,34 +33,60 @@ export function receiptObjectKey(receiptId, evidenceId) {
 }
 
 async function handleReceiptUpload(request, env) {
-  const contentType = request.headers.get("content-type") ?? "";
-  if (!contentType.startsWith("image/") && contentType !== "application/pdf") {
+  const contentType = (request.headers.get("content-type") ?? "")
+    .split(";", 1)[0]
+    .trim()
+    .toLowerCase();
+  if (!ALLOWED_RECEIPT_TYPES.has(contentType)) {
     return json(415, { error: "unsupported_media_type" });
   }
 
-  const length = Number(request.headers.get("content-length") ?? 0);
-  if (length > MAX_RECEIPT_BYTES) {
+  const contentLength = request.headers.get("content-length");
+  if (contentLength !== null) {
+    const length = Number(contentLength);
+    if (!Number.isFinite(length) || length < 0) {
+      return json(400, { error: "invalid_content_length" });
+    }
+    if (length > MAX_RECEIPT_BYTES) {
+      return json(413, { error: "payload_too_large" });
+    }
+  }
+
+  const body = await request.arrayBuffer();
+  if (body.byteLength === 0) {
+    return json(400, { error: "empty_payload" });
+  }
+  if (body.byteLength > MAX_RECEIPT_BYTES) {
     return json(413, { error: "payload_too_large" });
   }
 
   const receiptId = crypto.randomUUID();
   const evidenceId = crypto.randomUUID();
   const key = receiptObjectKey(receiptId, evidenceId);
-  const body = await request.arrayBuffer();
-  if (body.byteLength > MAX_RECEIPT_BYTES) {
-    return json(413, { error: "payload_too_large" });
-  }
 
   await env.RECEIPTS.put(key, body, {
     httpMetadata: { contentType },
     customMetadata: { schemaVersion: "1", recordKind: "receipt_evidence" },
   });
 
-  await env.DB.prepare(
-    `INSERT INTO receipt_evidence
-      (evidence_id, receipt_id, object_key, content_type, byte_length, created_at)
-     VALUES (?, ?, ?, ?, ?, datetime('now'))`,
-  ).bind(evidenceId, receiptId, key, contentType, body.byteLength).run();
+  try {
+    const result = await env.DB.prepare(
+      `INSERT INTO receipt_evidence
+        (evidence_id, receipt_id, object_key, content_type, byte_length, created_at)
+       VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+    ).bind(evidenceId, receiptId, key, contentType, body.byteLength).run();
+    if (result?.success === false) {
+      throw new Error("D1 insert reported failure");
+    }
+  } catch (error) {
+    try {
+      await env.RECEIPTS.delete(key);
+    } catch {
+      console.error("failed to remove orphaned receipt evidence", { evidenceId });
+    }
+    console.error("failed to persist receipt evidence metadata", { evidenceId, error });
+    return json(503, { error: "storage_unavailable" });
+  }
 
   return json(201, { receiptId, evidenceId });
 }
@@ -66,7 +104,8 @@ async function handleEvidenceDownload(request, env, evidenceId) {
     headers: {
       "content-type": row.content_type,
       "cache-control": "private, no-store",
-      "content-disposition": "attachment",
+      "content-disposition": `attachment; filename="${evidenceId}"`,
+      "x-content-type-options": "nosniff",
     },
   });
 }
