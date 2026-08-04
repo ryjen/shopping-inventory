@@ -1,0 +1,31 @@
+{
+  "envelope": {
+    "schema_version": "1.0.0",
+    "record_kind": "receipt_extraction_envelope",
+    "envelope_id": "env_syn_001",
+    "source": {"source_type":"synthetic","source_id":"src_syn_001","evidence_id":null},
+    "extractor": "synthetic-test-generator",
+    "extracted_at": "2026-01-15T18:00:00Z",
+    "merchant_raw": "Example Market",
+    "purchased_at_raw": "2026-01-15 10:00",
+    "purchased_at": "2026-01-15T10:00:00Z",
+    "currency": "CAD",
+    "receipt_total": 6.05,
+    "lines": [
+      {"line_id":"line_syn_001","line_number":1,"line_type":"item","raw_text":"MOON PEARS 0.500 kg @ 8.00/kg 4.00","description_raw":"MOON PEARS","quantity":0.5,"unit":"kg","unit_price":8.00,"extended_price":4.00,"tax_code":null,"parse_confidence":0.99,"notes":[]},
+      {"line_id":"line_syn_002","line_number":2,"line_type":"deposit","raw_text":"CONTAINER DEPOSIT 0.10","description_raw":null,"quantity":null,"unit":null,"unit_price":null,"extended_price":0.10,"tax_code":null,"parse_confidence":0.98,"notes":[]},
+      {"line_id":"line_syn_003","line_number":3,"line_type":"tax","raw_text":"TAX 0.20","description_raw":null,"quantity":null,"unit":null,"unit_price":null,"extended_price":0.20,"tax_code":"GST","parse_confidence":0.99,"notes":[]},
+      {"line_id":"line_syn_004","line_number":4,"line_type":"total","raw_text":"TOTAL 6.05","description_raw":null,"quantity":null,"unit":null,"unit_price":null,"extended_price":6.05,"tax_code":null,"parse_confidence":0.99,"notes":[]}
+    ]
+  },
+  "raw_rows": [
+    {"schema_version":"1.0.0","record_kind":"import_raw_row","import_id":"imp_syn_001","envelope_id":"env_syn_001","line_id":"line_syn_001","source":{"source_type":"synthetic","source_id":"src_syn_001","evidence_id":null},"line_number":1,"line_type":"item","raw_text":"MOON PEARS 0.500 kg @ 8.00/kg 4.00","quantity":0.5,"unit":"kg","unit_price":8.00,"extended_price":4.00,"parse_confidence":0.99,"review_state":"new","created_at":"2026-01-15T18:00:01Z"},
+    {"schema_version":"1.0.0","record_kind":"import_raw_row","import_id":"imp_syn_002","envelope_id":"env_syn_001","line_id":"line_syn_002","source":{"source_type":"synthetic","source_id":"src_syn_001","evidence_id":null},"line_number":2,"line_type":"deposit","raw_text":"CONTAINER DEPOSIT 0.10","quantity":null,"unit":null,"unit_price":null,"extended_price":0.10,"parse_confidence":0.98,"review_state":"new","created_at":"2026-01-15T18:00:01Z"}
+  ],
+  "candidate": {
+    "schema_version":"1.0.0","record_kind":"purchase_candidate","candidate_id":"cand_syn_001","source_import_id":"imp_syn_001","canonical_item_id":"item_moon_pear","quantity":0.5,"unit":"kg","amount":4.00,"normalization_confidence":0.97,"review_state":"approved","created_at":"2026-01-15T18:01:00Z"
+  },
+  "purchase": {
+    "schema_version":"1.0.0","record_kind":"purchase","purchase_id":"pur_syn_001","source_candidate_id":"cand_syn_001","canonical_item_id":"item_moon_pear","quantity":0.5,"unit":"kg","amount":4.00,"acquired_at":"2026-01-15T10:00:00Z","supersedes_id":null,"created_at":"2026-01-15T18:02:00Z"
+  }
+}
