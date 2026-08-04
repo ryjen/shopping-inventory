@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/shopping-inventory/schemas/v1/shopping-inventory.schema.json",
+  "title": "Shopping Inventory canonical contracts v1",
+  "$defs": {
+    "money": {"type":"number","multipleOf":0.01},
+    "confidence": {"type":"number","minimum":0,"maximum":1},
+    "lineType": {"enum":["item","fee","deposit","discount","coupon","subtotal","tax","total","informational","return","refund","void"]},
+    "reviewState": {"enum":["new","needs_review","approved","rejected","superseded"]},
+    "sourceRef": {
+      "type":"object",
+      "required":["source_type","source_id"],
+      "properties": {
+        "source_type":{"enum":["receipt_image","receipt_pdf","order_email","manual","synthetic"]},
+        "source_id":{"type":"string","minLength":1},
+        "evidence_id":{"type":["string","null"]}
+      },
+      "additionalProperties":false
+    },
+    "receiptLine": {
+      "type":"object",
+      "required":["line_id","line_number","line_type","raw_text","parse_confidence"],
+      "properties": {
+        "line_id":{"type":"string","minLength":1},
+        "line_number":{"type":"integer","minimum":1},
+        "line_type":{"$ref":"#/$defs/lineType"},
+        "raw_text":{"type":"string"},
+        "description_raw":{"type":["string","null"]},
+        "quantity":{"type":["number","null"],"exclusiveMinimum":0},
+        "unit":{"type":["string","null"]},
+        "unit_price":{"anyOf":[{"$ref":"#/$defs/money"},{"type":"null"}]},
+        "extended_price":{"anyOf":[{"$ref":"#/$defs/money"},{"type":"null"}]},
+        "tax_code":{"type":["string","null"]},
+        "parse_confidence":{"$ref":"#/$defs/confidence"},
+        "notes":{"type":"array","items":{"type":"string"}}
+      },
+      "additionalProperties":false
+    },
+    "receiptExtractionEnvelope": {
+      "type":"object",
+      "required":["schema_version","record_kind","envelope_id","source","extractor","extracted_at","currency","lines"],
+      "properties": {
+        "schema_version":{"const":"1.0.0"},
+        "record_kind":{"const":"receipt_extraction_envelope"},
+        "envelope_id":{"type":"string","minLength":1},
+        "source":{"$ref":"#/$defs/sourceRef"},
+        "extractor":{"type":"string","minLength":1},
+        "extracted_at":{"type":"string","format":"date-time"},
+        "merchant_raw":{"type":["string","null"]},
+        "purchased_at_raw":{"type":["string","null"]},
+        "purchased_at":{"type":["string","null"],"format":"date-time"},
+        "currency":{"type":"string","pattern":"^[A-Z]{3}$"},
+        "receipt_total":{"anyOf":[{"$ref":"#/$defs/money"},{"type":"null"}]},
+        "lines":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/receiptLine"}}
+      },
+      "additionalProperties":false
+    },
+    "importRawRow": {
+      "type":"object",
+      "required":["schema_version","record_kind","import_id","envelope_id","line_id","source","line_number","line_type","raw_text","review_state","created_at"],
+      "properties": {
+        "schema_version":{"const":"1.0.0"},
+        "record_kind":{"const":"import_raw_row"},
+        "import_id":{"type":"string","minLength":1},
+        "envelope_id":{"type":"string","minLength":1},
+        "line_id":{"type":"string","minLength":1},
+        "source":{"$ref":"#/$defs/sourceRef"},
+        "line_number":{"type":"integer","minimum":1},
+        "line_type":{"$ref":"#/$defs/lineType"},
+        "raw_text":{"type":"string"},
+        "quantity":{"type":["number","null"]},
+        "unit":{"type":["string","null"]},
+        "unit_price":{"anyOf":[{"$ref":"#/$defs/money"},{"type":"null"}]},
+        "extended_price":{"anyOf":[{"$ref":"#/$defs/money"},{"type":"null"}]},
+        "parse_confidence":{"$ref":"#/$defs/confidence"},
+        "review_state":{"$ref":"#/$defs/reviewState"},
+        "created_at":{"type":"string","format":"date-time"}
+      },
+      "additionalProperties":false
+    },
+    "purchaseCandidate": {
+      "type":"object",
+      "required":["schema_version","record_kind","candidate_id","source_import_id","canonical_item_id","quantity","review_state","created_at"],
+      "properties": {
+        "schema_version":{"const":"1.0.0"},
+        "record_kind":{"const":"purchase_candidate"},
+        "candidate_id":{"type":"string","minLength":1},
+        "source_import_id":{"type":"string","minLength":1},
+        "canonical_item_id":{"type":"string","minLength":1},
+        "quantity":{"type":"number","exclusiveMinimum":0},
+        "unit":{"type":["string","null"]},
+        "amount":{"anyOf":[{"$ref":"#/$defs/money"},{"type":"null"}]},
+        "normalization_confidence":{"$ref":"#/$defs/confidence"},
+        "review_state":{"enum":["needs_review","approved","rejected"]},
+        "created_at":{"type":"string","format":"date-time"}
+      },
+      "additionalProperties":false
+    },
+    "purchase": {
+      "type":"object",
+      "required":["schema_version","record_kind","purchase_id","source_candidate_id","canonical_item_id","quantity","acquired_at","created_at"],
+      "properties": {
+        "schema_version":{"const":"1.0.0"},
+        "record_kind":{"const":"purchase"},
+        "purchase_id":{"type":"string","minLength":1},
+        "source_candidate_id":{"type":"string","minLength":1},
+        "canonical_item_id":{"type":"string","minLength":1},
+        "quantity":{"type":"number","exclusiveMinimum":0},
+        "unit":{"type":["string","null"]},
+        "amount":{"anyOf":[{"$ref":"#/$defs/money"},{"type":"null"}]},
+        "acquired_at":{"type":["string","null"],"format":"date-time"},
+        "supersedes_id":{"type":["string","null"]},
+        "created_at":{"type":"string","format":"date-time"}
+      },
+      "additionalProperties":false
+    }
+  }
+}
