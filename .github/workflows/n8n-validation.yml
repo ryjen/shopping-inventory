@@ -3,28 +3,36 @@ name: Repository validation
 on:
   pull_request:
     paths:
+      - '.github/pull_request_template.md'
+      - '.github/workflows/n8n-validation.yml'
+      - 'README.md'
       - 'automation/n8n/**'
-      - 'src/**'
+      - 'docs/**'
+      - 'evaluation/**'
       - 'migrations/**'
+      - 'package.json'
       - 'scripts/test-n8n-import.sh'
+      - 'src/**'
       - 'test/**/*.mjs'
       - 'test/fixtures/n8n/**'
-      - 'package.json'
       - 'wrangler.toml'
-      - '.github/workflows/n8n-validation.yml'
   push:
     branches:
       - main
     paths:
+      - '.github/pull_request_template.md'
+      - '.github/workflows/n8n-validation.yml'
+      - 'README.md'
       - 'automation/n8n/**'
-      - 'src/**'
+      - 'docs/**'
+      - 'evaluation/**'
       - 'migrations/**'
+      - 'package.json'
       - 'scripts/test-n8n-import.sh'
+      - 'src/**'
       - 'test/**/*.mjs'
       - 'test/fixtures/n8n/**'
-      - 'package.json'
       - 'wrangler.toml'
-      - '.github/workflows/n8n-validation.yml'
   workflow_dispatch:
 
 permissions:
