@@ -1,217 +1,148 @@
 # Shopping Inventory
 
-A personal, opinionated grocery and household inventory system built around my receipts, order emails, Google Sheets, and conservative AI-assisted workflows.
+A personal grocery and household inventory system built around private receipt evidence, reviewed purchase records, conservative automation, and explainable recommendations.
 
-This is not trying to be a universal product, SaaS, starter kit, or best-practice template for everyone else. There are many other shopping, pantry, receipt, budgeting, and meal-planning systems like it. This one is mine.
+The core model is simple: receipts and order emails prove acquisition, not possession. Raw evidence is preserved privately, reviewed records become authoritative purchases, stock is derived probabilistically, and downstream shopping or budget outputs remain recomputable.
 
-The goal is selfish in the useful sense: reduce my own household friction, understand my actual grocery and household spend, avoid buying duplicates, make better shopping lists, and preserve enough structure that I can automate safely later.
+## Privacy boundary
 
-The core idea is simple: receipts and order emails prove acquisition, not possession. The system keeps raw imports immutable, promotes reviewed purchases into an authoritative ledger, estimates current stock probabilistically, and uses that state to support shopping lists, meal planning, deal matching, and budget rollups.
+This repository is public and contains only:
 
-## Orientation
+- source code;
+- migrations and schemas;
+- documentation;
+- synthetic fixtures and generated test data.
 
-This repo documents the system I want to operate for myself.
+Real receipts, OCR payloads, purchase history, stock state, budget outputs, credentials, and household data must not be committed.
 
-That means:
-
-- personal usefulness beats generality
-- boring workflows beat clever automation
-- Google Sheets is acceptable if it works
-- SQLite or PocketBase are plausible later because they fit a small personal system
-- hosted backends are candidates only if a real need appears
-- raw receipt/order evidence should be preserved
-- AI can assist, but should not silently mutate truth
-- recommendations should explain themselves
-
-## Personal use cases
-
-### Receipt ingestion
-
-- Upload grocery receipt photos and extract purchased line items
-- Preserve raw receipt text, confidence, and ambiguity
-- Append to an import/staging sheet without overwriting inventory
-- Deduplicate accidental re-uploads
-- Support later correction and normalization
-
-### Grocery purchase ledger
-
-- Track what I bought, when, where, and for how much
-- Normalize messy receipt abbreviations into canonical items I actually use
-- Separate food, household, pet, personal care, pharmacy, and misc retail
-- Build monthly grocery and household spend summaries
-- Export clean category rollups into a separate budget spreadsheet
-
-### Stock estimation
-
-- Estimate likely pantry/fridge/freezer state from purchase history
-- Use coarse states instead of fake precision: `none`, `low`, `available`, `stocked`, `unknown`
-- Flag produce and perishables that should be used soon
-- Avoid direct mutation from OCR into current inventory
-
-### Shopping lists
-
-- Suggest replenishment based on staple cadence, recent purchases, estimated stock, meal plans, and budget
-- Avoid recommending items already likely stocked
-- Explain why each item is suggested
-- Support store-specific lists later if useful
-
-### Meal planning
-
-- Suggest meals from current estimated inventory
-- Prioritize expiring produce and already-owned proteins/staples
-- Use web search for recipes when useful
-- Avoid nutrition precision the data cannot support
-
-### Deals and flyers
-
-- Ingest flyer/email/web deals into a raw deals table
-- Match deals against staples, low-stock items, and planned meals
-- Compare current prices against historical purchase prices
-- Suppress noisy deals for items already stocked or rarely used
-
-### Non-food household inventory
-
-- Track slower-moving items that are often easier to estimate than fresh food
-- Useful categories: cat food/litter, detergent, cleaning supplies, paper goods, toiletries, batteries, pharmacy basics, kitchen supplies
-- Support Amazon and other ecommerce receipts through email/order imports
-
-## System model
+The preferred private operating substrate is:
 
 ```mermaid
 flowchart LR
-  ReceiptPhotos["Receipt photos"] --> ImportRaw["Import_Raw"]
-  EmailReceipts["Email receipts"] --> ImportRaw
-  AmazonOrders["Amazon/order emails"] --> OrdersRaw["Orders_Raw"]
-  WebDeals["Flyers / web deals"] --> DealsRaw["Deals_Raw"]
-
-  ImportRaw --> Normalize["AI normalization + review"]
-  OrdersRaw --> Normalize
-  Normalize --> Purchases["Purchases ledger"]
-  Purchases --> Stock["Stock estimate"]
-  Purchases --> BudgetExport["Budget_Export"]
-  DealsRaw --> Planner["Shopping planner"]
-  Stock --> Planner
-  Purchases --> Planner
-  Planner --> ShoppingList["Shopping list"]
-  Stock --> MealIdeas["Meal suggestions"]
+  Client[Authenticated client] --> Worker[Cloudflare Worker]
+  Worker --> D1[(Private D1)]
+  Worker --> R2[(Private R2)]
+  Repo[Public GitHub repository] --> Fixtures[Synthetic fixtures only]
 ```
 
-## Spreadsheet-first architecture
+- **Cloudflare D1** is the authoritative structured datastore.
+- **Cloudflare R2** stores private receipt images and large source payloads.
+- **Cloudflare Worker** is the authenticated access boundary.
+- **Google Sheets** may be used as an optional export or review surface, but is not authoritative.
+- **CSV and SQLite-compatible exports** preserve portability and recovery.
 
-This project starts with Google Sheets as the operating datastore, not a custom app.
+See [Private Data Policy](docs/security/private-data-policy.md) and [Private Receipt Storage Runbook](docs/runbooks/private-receipt-storage.md).
 
-That is a deliberate personal constraint. I want the system to be visible, editable, recoverable, and useful before I promote any part of it into code.
+## Product principles
 
-Starting tabs:
+- Personal usefulness beats generality.
+- Raw extraction is evidence, not truth.
+- AI may propose changes but must not silently mutate authoritative state.
+- Purchases are the authoritative ledger.
+- Stock is derived and probabilistic.
+- Ambiguous records route to review.
+- Recommendations explain their rationale.
+- Provider-specific concerns remain isolated from the domain model.
 
-| Tab | Purpose |
-| --- | --- |
-| `Import_Raw` | Append-only receipt OCR/extraction inbox |
-| `Orders_Raw` | Append-only email/ecommerce order import inbox |
-| `Deals_Raw` | Raw flyer/deal/email promo captures |
-| `Purchases` | Reviewed or AI-normalized authoritative purchase ledger |
-| `Stock` | Derived/coarse estimate of current inventory |
-| `Aliases` | Mapping from raw receipt patterns to canonical items |
-| `Budget_Export` | Monthly/category rollups for a separate budget sheet |
-| `Review_Queue` | Low-confidence rows requiring human or AI review |
-
-## Data flow principles
+## Core data flow
 
 ```mermaid
 flowchart TD
-  Raw["Raw imports"] --> Review["Review / normalization"]
-  Review --> Ledger["Authoritative purchases"]
-  Ledger --> Derived["Derived stock and budget views"]
-  Derived --> Recs["Recommendations and automations"]
-
-  Raw -. never destructive .-> Raw
-  Derived -. recomputable .-> Ledger
+  Evidence[Private receipt/order evidence] --> Extract[Extraction]
+  Extract --> Raw[Raw imports]
+  Raw --> Normalize[Normalization and review]
+  Normalize --> Purchases[Authoritative purchases]
+  Purchases --> Stock[Derived stock]
+  Purchases --> Budget[Budget export]
+  Stock --> Planner[Shopping planner]
+  Purchases --> Planner
 ```
 
-- Raw imports are append-only
-- OCR/AI output is evidence, not truth
-- Purchases are the authoritative ledger
-- Stock is derived and probabilistic
-- Recommendations must explain their rationale
-- Budget exports consume authoritative purchases, not raw imports
-- Provider choices should stay reversible until the workflow proves they matter
+## Current implementation
 
-## Suggested MVP
+The repository currently includes:
 
-1. Create the Google Sheet with the core tabs
-2. Upload receipt images to ChatGPT or another AI workflow
-3. Append extracted rows to `Import_Raw`
-4. Normalize reviewed rows into `Purchases`
-5. Generate coarse `Stock` states
-6. Produce a weekly shopping list and monthly `Budget_Export`
+- n8n ingestion workflows and layered validation tests;
+- a Cloudflare Worker storage boundary;
+- a D1 migration for receipt evidence metadata and audit events;
+- private R2 receipt upload and retrieval paths;
+- compensating cleanup when D1 persistence fails;
+- synthetic Cloudflare tests;
+- privacy-focused Git ignore rules and contribution checks.
 
-## Future automation lanes
+The current milestone is **privacy and schema stabilization**:
 
-```mermaid
-flowchart LR
-  Gmail["Gmail"] --> EmailParser["Receipt/order parser"]
-  ChatGPT["ChatGPT image extraction"] --> ImportRaw["Import_Raw"]
-  AppsScript["Apps Script"] --> Sheets["Google Sheets"]
-  N8N["n8n"] --> Sheets
-  Web["Web/flyer search"] --> DealsRaw["Deals_Raw"]
-  Sheets --> Reports["Budget + shopping reports"]
+1. keep all personal data private;
+2. audit and remediate existing receipt-derived repository history;
+3. finalize versioned canonical contracts;
+4. prove one synthetic receipt through the complete vertical slice;
+5. add automated schema and privacy validation.
+
+## Repository layout
+
+```text
+.github/                 Pull request and CI configuration
+automation/n8n/          Conservative ingestion workflows
+docs/                    Architecture, policies, schemas, and runbooks
+evaluation/              Synthetic regression fixtures
+migrations/              D1/SQLite-compatible migrations
+src/                     Cloudflare Worker implementation
+test/                    Unit, integration, and simulation tests
 ```
 
-Potential implementation paths:
+## Development
 
-- ChatGPT + Google Sheets direct updates for manual/low-code MVP
-- Google Apps Script for sheet-native normalization and rollups
-- n8n for scheduled Gmail, Amazon/order email, and flyer ingestion
-- SQLite if the system wants a local, scriptable, durable core
-- PocketBase if a small API/admin/files layer becomes useful
-- Hosted Postgres/Supabase-style platforms only if remote access, auth, or multi-user needs justify the operational weight
+Requirements:
+
+- Node.js 20 or newer
+- npm
+
+Run tests:
+
+```bash
+npm test
+npm run test:cloudflare
+npm run test:n8n:unit
+npm run test:n8n:integration
+npm run test:n8n:e2e
+```
+
+Run the Worker locally with synthetic data:
+
+```bash
+npm install
+npm run cf:migrate:local
+npm run cf:dev
+```
+
+Production credentials and Cloudflare resource identifiers must remain outside the repository.
 
 ## Documentation
 
-### Architecture and decisions
+### Privacy and architecture
+
+- [Private Data Policy](docs/security/private-data-policy.md)
+- [Threat model and privacy considerations](docs/security/threat-model-and-privacy.md)
+- [Cloudflare private storage](docs/architecture/cloudflare-private-storage.md)
+- [Private receipt storage runbook](docs/runbooks/private-receipt-storage.md)
+
+### Data contracts and behavior
 
 - [Architecture](docs/architecture.md)
-- [ADR-0001: Spreadsheet-first low-code substrate](docs/decisions/ADR-0001-spreadsheet-first-low-code-substrate.md)
-- [ADR-0002: Raw imports are append-only evidence](docs/decisions/ADR-0002-raw-imports-are-append-only-evidence.md)
-- [ADR-0003: Coarse probabilistic stock estimation](docs/decisions/ADR-0003-coarse-probabilistic-stock-estimation.md)
-- [ADR-0004: Apps Script vs n8n automation](docs/decisions/ADR-0004-apps-script-vs-n8n.md)
-- [ADR-0005: Defer backend provider selection](docs/decisions/ADR-0005-defer-backend-provider-selection.md)
-
-### Planning and runbooks
-
-- [Next steps](docs/planning/next-steps.md)
-- [Manual receipt ingestion runbook](docs/runbooks/manual-receipt-ingestion.md)
-
-### Schemas
-
 - [Sheet schema overview](docs/schema/README.md)
 - [Raw import schemas](docs/schema/raw-imports.md)
 - [Ledger and derived schemas](docs/schema/ledger-and-derived.md)
-
-### Specifications
-
 - [Normalization pipeline](docs/specs/normalization-pipeline.md)
-- [Item aliasing and canonicalization](docs/specs/aliasing-canonicalization.md)
 - [Receipt ingestion prompt contracts](docs/specs/receipt-ingestion-prompt-contracts.md)
 - [Inventory decay heuristics](docs/specs/inventory-decay-heuristics.md)
-- [Recommendation engine architecture](docs/specs/recommendation-engine.md)
-- [Budget export mappings and categories](docs/specs/budget-export-mappings.md)
+- [Recommendation engine](docs/specs/recommendation-engine.md)
 
-### Automation
+### Automation and evaluation
 
 - [n8n automation workflows](automation/n8n/README.md)
-- [Shopping ingestion starter workflow](automation/n8n/shopping-ingestion-starter.n8n.json)
-
-### Research
-
-- [Backend provider requirements and evaluation](docs/research/provider-requirements.md)
-
-### Security and evaluation
-
-- [Threat model and privacy considerations](docs/security/threat-model-and-privacy.md)
-- [OCR normalization evaluation corpus](docs/evaluation/ocr-normalization-corpus.md)
 - [Evaluation fixtures](evaluation/README.md)
+- [Next steps](docs/planning/next-steps.md)
 
 ## Status
 
-Preliminary architecture and decision documentation for a personal system. Implementation intentionally starts simple: Google Sheets + AI extraction + reviewable promotion into authoritative purchases.
+Early implementation. The private Cloudflare storage boundary exists, but production resources have not been provisioned and real personal data must not be added until the privacy audit and operational controls are complete.
