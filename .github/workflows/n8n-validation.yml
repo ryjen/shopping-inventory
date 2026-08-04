@@ -11,6 +11,7 @@ on:
       - 'evaluation/**'
       - 'migrations/**'
       - 'package.json'
+      - 'schemas/**'
       - 'scripts/test-n8n-import.sh'
       - 'src/**'
       - 'test/**/*.mjs'
@@ -28,6 +29,7 @@ on:
       - 'evaluation/**'
       - 'migrations/**'
       - 'package.json'
+      - 'schemas/**'
       - 'scripts/test-n8n-import.sh'
       - 'src/**'
       - 'test/**/*.mjs'
@@ -40,7 +42,7 @@ permissions:
 
 jobs:
   repository-tests:
-    name: n8n and Cloudflare unit/integration tests
+    name: contract, n8n, and Cloudflare tests
     runs-on: ubuntu-latest
 
     steps:
@@ -51,6 +53,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Run canonical contract tests
+        run: node --test test/canonical-contracts.test.mjs
 
       - name: Run n8n unit tests
         run: npm run test:n8n:unit
