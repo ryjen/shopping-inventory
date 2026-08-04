@@ -1,0 +1,18 @@
+name = "shopping-inventory"
+main = "src/worker.mjs"
+compatibility_date = "2026-08-01"
+workers_dev = false
+
+# Resource identifiers are intentionally omitted from the public repository.
+[[d1_databases]]
+binding = "DB"
+database_name = "shopping-inventory-dev"
+database_id = "REPLACE_IN_PRIVATE_CONFIGURATION"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "RECEIPTS"
+bucket_name = "shopping-inventory-receipts-dev"
+
+[vars]
+ENVIRONMENT = "development"
