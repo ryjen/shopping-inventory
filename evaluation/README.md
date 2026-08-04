@@ -1,8 +1,10 @@
 # Evaluation Fixtures
 
-This directory contains synthetic and redacted fixtures for testing OCR extraction, normalization, aliasing, review routing, stock decay, and budget export behavior.
+This directory contains synthetic fixtures for testing OCR extraction, normalization, aliasing, review routing, stock decay, and budget export behavior.
 
-Do not commit real receipt images, full email bodies, addresses, payment card fragments, account identifiers, loyalty IDs, or private order URLs.
+Public fixtures must be synthetic. Removing a few identifiers from a real transaction is not sufficient for publication.
+
+See [Private Data Policy](../docs/security/private-data-policy.md).
 
 ## Structure
 
@@ -19,16 +21,19 @@ evaluation/
 
 ## Workflow
 
-1. Add a fixture case that captures a parsing or normalization behavior
+1. Create a synthetic fixture for the target behavior
 2. Add the expected normalized purchase or review queue decision
-3. Run the future normalization pipeline against fixtures
+3. Run the normalization pipeline against fixtures
 4. Compare actual output to expected output
 5. Update rules or fixtures deliberately
 
 ## Principles
 
-- Prefer synthetic examples
-- Preserve parsing difficulty without preserving private data
+- Public fixtures are synthetic, not merely redacted
+- Invent identifiers, merchants, dates, baskets, and totals
+- Preserve parsing difficulty without preserving a real transaction
+- Use only the minimum fields needed by the test
 - Ambiguous cases should route to review
 - Raw evidence should not be destructively rewritten
 - Expected outputs should include rationale when relevant
+- Real data belongs only in approved private storage
