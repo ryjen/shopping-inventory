@@ -112,7 +112,7 @@ export async function scanFile(filePath) {
 
   const buffer = await readFile(filePath);
   if (buffer.length > MAX_TEXT_BYTES || isProbablyBinary(buffer)) {
-    return pathViolations;
+    return [...new Set([...pathViolations, "unscannable-tracked-file"])].sort();
   }
 
   return [...new Set([...pathViolations, ...scanText(path, buffer.toString("utf8"))])].sort();
