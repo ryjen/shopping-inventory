@@ -1,7 +1,12 @@
 PRAGMA foreign_keys = ON;
 
-DELETE FROM purchases WHERE purchase_id LIKE 'pur_syn_rel_%';
-DELETE FROM purchase_candidates WHERE candidate_id LIKE 'cand_syn_rel_%';
+-- Self-referencing supersession uses ON DELETE RESTRICT, so test cleanup must
+-- remove correction children before their parents.
+DELETE FROM purchases WHERE purchase_id = 'pur_syn_rel_correction';
+DELETE FROM purchases WHERE purchase_id = 'pur_syn_rel_duplicate';
+DELETE FROM purchases WHERE purchase_id = 'pur_syn_rel_primary';
+DELETE FROM purchase_candidates WHERE candidate_id = 'cand_syn_rel_correction';
+DELETE FROM purchase_candidates WHERE candidate_id = 'cand_syn_rel_primary';
 DELETE FROM import_raw_rows WHERE envelope_id = 'env_syn_rel_positive';
 DELETE FROM receipt_extraction_envelopes WHERE envelope_id = 'env_syn_rel_positive';
 
@@ -61,7 +66,10 @@ SELECT CASE
   ELSE json_extract('invalid-json', '$')
 END AS single_superseder_ok;
 
-DELETE FROM purchases WHERE purchase_id IN ('pur_syn_rel_correction', 'pur_syn_rel_primary', 'pur_syn_rel_duplicate');
-DELETE FROM purchase_candidates WHERE candidate_id IN ('cand_syn_rel_correction', 'cand_syn_rel_primary');
+DELETE FROM purchases WHERE purchase_id = 'pur_syn_rel_correction';
+DELETE FROM purchases WHERE purchase_id = 'pur_syn_rel_duplicate';
+DELETE FROM purchases WHERE purchase_id = 'pur_syn_rel_primary';
+DELETE FROM purchase_candidates WHERE candidate_id = 'cand_syn_rel_correction';
+DELETE FROM purchase_candidates WHERE candidate_id = 'cand_syn_rel_primary';
 DELETE FROM import_raw_rows WHERE envelope_id = 'env_syn_rel_positive';
 DELETE FROM receipt_extraction_envelopes WHERE envelope_id = 'env_syn_rel_positive';
