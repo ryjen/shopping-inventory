@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test test/*.test.mjs",
+    "privacy:check": "node scripts/privacy-guard.mjs --tracked",
     "test:n8n": "node --test test/n8n-*.test.mjs",
     "test:n8n:unit": "node --test test/n8n-code-nodes.test.mjs",
     "test:n8n:integration": "node --test test/n8n-workflows.test.mjs test/n8n-workflow-simulation.test.mjs",

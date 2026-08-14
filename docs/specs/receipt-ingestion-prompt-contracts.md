@@ -136,34 +136,37 @@ The extractor should ask for manual review or return low confidence when:
 
 ## Example output fragment
 
+The following fragment is materially synthetic. The merchant, identifiers, timestamp, basket, quantities, and prices are invented rather than redacted from a real transaction.
+
+<!-- privacy-guard: synthetic-example -->
 ```json
 {
   "receipt": {
-    "receipt_id": "rcpt_2026_05_27_example_001",
-    "merchant_raw": "SAVE-ON-FOODS",
-    "merchant_normalized": "Save-On-Foods",
-    "purchased_at_raw": "2026/05/27 18:42",
-    "purchased_at": "2026-05-27T18:42:00-07:00",
+    "receipt_id": "rcpt_syn_001",
+    "merchant_raw": "MOON MARKET",
+    "merchant_normalized": "Moon Market",
+    "purchased_at_raw": "2026/01/15 10:00",
+    "purchased_at": "2026-01-15T10:00:00Z",
     "currency": "CAD",
-    "receipt_total_raw": "$42.17",
-    "receipt_total_amount": 42.17,
+    "receipt_total_raw": "$4.00",
+    "receipt_total_amount": 4.00,
     "confidence": 0.92,
     "ambiguity_notes": []
   },
   "lines": [
     {
       "line_number": 1,
-      "raw_line_text": "BNNAS 1.23KG 2.69",
-      "item_text_raw": "BNNAS",
-      "quantity_raw": "1.23KG",
+      "raw_line_text": "MOON PEARS 0.500KG 4.00",
+      "item_text_raw": "MOON PEARS",
+      "quantity_raw": "0.500KG",
       "unit_raw": "KG",
-      "price_raw": "2.69",
-      "price_amount": 2.69,
+      "price_raw": "4.00",
+      "price_amount": 4.00,
       "tax_raw": null,
       "discount_raw": null,
       "ocr_confidence": 0.91,
       "parse_confidence": 0.86,
-      "ambiguity_notes": ["Item appears to be bananas but raw text is abbreviated"]
+      "ambiguity_notes": []
     }
   ]
 }

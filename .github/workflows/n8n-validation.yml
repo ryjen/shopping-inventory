@@ -2,45 +2,21 @@ name: Repository validation
 
 on:
   pull_request:
-    paths:
-      - '.github/pull_request_template.md'
-      - '.github/workflows/n8n-validation.yml'
-      - 'README.md'
-      - 'automation/n8n/**'
-      - 'docs/**'
-      - 'evaluation/**'
-      - 'migrations/**'
-      - 'package.json'
-      - 'scripts/test-n8n-import.sh'
-      - 'src/**'
-      - 'test/**/*.mjs'
-      - 'test/fixtures/n8n/**'
-      - 'wrangler.toml'
   push:
     branches:
       - main
-    paths:
-      - '.github/pull_request_template.md'
-      - '.github/workflows/n8n-validation.yml'
-      - 'README.md'
-      - 'automation/n8n/**'
-      - 'docs/**'
-      - 'evaluation/**'
-      - 'migrations/**'
-      - 'package.json'
-      - 'scripts/test-n8n-import.sh'
-      - 'src/**'
-      - 'test/**/*.mjs'
-      - 'test/fixtures/n8n/**'
-      - 'wrangler.toml'
   workflow_dispatch:
+
+concurrency:
+  group: repository-validation-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
   repository-tests:
-    name: n8n and Cloudflare unit/integration tests
+    name: privacy, n8n, and Cloudflare tests
     runs-on: ubuntu-latest
 
     steps:
@@ -51,6 +27,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Scan tracked repository for private data
+        run: npm run privacy:check
+
+      - name: Test privacy guard regressions
+        run: node --test test/privacy-guard.test.mjs
 
       - name: Run n8n unit tests
         run: npm run test:n8n:unit
