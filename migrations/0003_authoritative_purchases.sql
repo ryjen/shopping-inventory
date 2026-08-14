@@ -64,3 +64,12 @@ CREATE TABLE purchases (
 
 CREATE INDEX idx_purchases_canonical_item
   ON purchases(canonical_item_id, acquired_at);
+
+-- Canonical Purchase records are authoritative immutable acquisition facts.
+-- Corrections are represented by inserting a new Purchase with supersedes_id;
+-- allowing UPDATE would permit silent history mutation and post-hoc cycles.
+CREATE TRIGGER purchases_reject_update
+BEFORE UPDATE ON purchases
+BEGIN
+  SELECT RAISE(ABORT, 'purchases are immutable; insert a superseding purchase');
+END;
