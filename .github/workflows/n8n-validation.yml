@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   repository-tests:
-    name: privacy, n8n, and Cloudflare tests
+    name: privacy, contract, n8n, and Cloudflare tests
     runs-on: ubuntu-latest
 
     steps:
@@ -33,6 +33,12 @@ jobs:
 
       - name: Test privacy guard regressions
         run: node --test test/privacy-guard.test.mjs
+
+      - name: Install contract test dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Validate canonical contracts
+        run: npm run test:contracts
 
       - name: Run n8n unit tests
         run: npm run test:n8n:unit
