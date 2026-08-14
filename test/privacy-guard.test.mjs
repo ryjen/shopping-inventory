@@ -7,7 +7,7 @@ const join = (...parts) => parts.join("");
 
 // Construct detector inputs at runtime so the repository-wide guard can scan its
 // own regression test without checking in literal examples that look private.
-const realLookingReceipt = JSON.stringify({
+const realLookingReceiptObject = {
   [join("mer", "chant")]: "Example Local Market",
   [join("purchased", "_at")]: "2026-08-13T18:22:00-07:00",
   [join("li", "nes")]: [
@@ -16,7 +16,9 @@ const realLookingReceipt = JSON.stringify({
   ],
   [join("sub", "total")]: Number(join("21", ".", "48")),
   [join("to", "tal")]: Number(join("22", ".", "55")),
-});
+};
+const realLookingReceipt = JSON.stringify(realLookingReceiptObject);
+const syntheticReceipt = JSON.stringify({ synthetic: true, ...realLookingReceiptObject });
 
 test("rejects a receipt-like transaction regardless of path", () => {
   assert.deepEqual(scanText("misc/upload.json", realLookingReceipt), [
@@ -30,16 +32,29 @@ test("renaming a receipt-like payload does not bypass the guard", () => {
   ]);
 });
 
-test("designated synthetic fixtures may exercise receipt structure", () => {
+test("fixture location alone does not bypass receipt detection", () => {
   assert.deepEqual(
-    scanText("evaluation/fixtures/example.synthetic.json", realLookingReceipt),
+    scanText("evaluation/fixtures/example.json", realLookingReceipt),
+    ["likely-real-transaction-payload"],
+  );
+});
+
+test("designated fixtures require an explicit synthetic marker", () => {
+  assert.deepEqual(
+    scanText("evaluation/fixtures/example.synthetic.json", syntheticReceipt),
     [],
   );
 });
 
-test("synthetic fixture paths do not exempt personal identifiers", () => {
+test("synthetic fixture markers outside fixture directories are not exemptions", () => {
+  assert.deepEqual(scanText("misc/upload.json", syntheticReceipt), [
+    "likely-real-transaction-payload",
+  ]);
+});
+
+test("synthetic fixtures do not exempt personal identifiers", () => {
   const privateEmail = join("person", "@", "private-domain", ".ca");
-  const content = `${realLookingReceipt}\ncustomer_email: ${privateEmail}`;
+  const content = `${syntheticReceipt}\ncustomer_email: ${privateEmail}`;
   assert.deepEqual(
     scanText("evaluation/fixtures/example.synthetic.json", content),
     ["personal-email-address"],
