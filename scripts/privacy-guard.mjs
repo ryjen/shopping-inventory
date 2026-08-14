@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 
 const MAX_TEXT_BYTES = 2 * 1024 * 1024;
 const SYNTHETIC_FIXTURE_PATH = /^(?:evaluation\/fixtures|test\/fixtures)\//;
+const SYNTHETIC_MARKER = /(?:["']synthetic["']\s*:\s*true|["']source_type["']\s*:\s*["']synthetic["'])/i;
 const FORBIDDEN_PRIVATE_PATHS = [
   /^\.private\//,
   /^private\//,
@@ -78,9 +79,11 @@ export function scanText(filePath, text) {
   if (PAYMENT_IDENTIFIER.test(text)) violations.add("payment-identifier");
   if (LOYALTY_IDENTIFIER.test(text)) violations.add("loyalty-identifier");
 
-  // Synthetic fixtures in designated fixture directories may intentionally look
-  // receipt-like. They are still checked for credentials and personal identifiers.
-  if (!SYNTHETIC_FIXTURE_PATH.test(path)) {
+  // Receipt-shaped examples are exempt only when they live in a designated fixture
+  // directory and explicitly identify themselves as synthetic. The location alone is
+  // not a bypass. Identifier/credential checks still apply to synthetic fixtures.
+  const isSyntheticFixture = SYNTHETIC_FIXTURE_PATH.test(path) && SYNTHETIC_MARKER.test(text);
+  if (!isSyntheticFixture) {
     const receiptSignalCount = RECEIPT_SIGNALS.filter((pattern) => pattern.test(text)).length;
     const moneyLikeValues = (text.match(/(?:\b(?:CAD|USD)\s*)?\$?\d+\.\d{2}\b/g) ?? []).length;
     if (receiptSignalCount >= 3 && moneyLikeValues >= 2) {
