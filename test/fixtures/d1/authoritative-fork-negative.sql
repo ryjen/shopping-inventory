@@ -1,7 +1,11 @@
 PRAGMA foreign_keys = ON;
 
-DELETE FROM purchases WHERE purchase_id LIKE 'pur_syn_fork_%';
-DELETE FROM purchase_candidates WHERE candidate_id LIKE 'cand_syn_fork_%';
+DELETE FROM purchases WHERE purchase_id = 'pur_syn_fork_b';
+DELETE FROM purchases WHERE purchase_id = 'pur_syn_fork_a';
+DELETE FROM purchases WHERE purchase_id = 'pur_syn_fork_root';
+DELETE FROM purchase_candidates WHERE candidate_id = 'cand_syn_fork_b';
+DELETE FROM purchase_candidates WHERE candidate_id = 'cand_syn_fork_a';
+DELETE FROM purchase_candidates WHERE candidate_id = 'cand_syn_fork_root';
 DELETE FROM import_raw_rows WHERE envelope_id = 'env_syn_fork';
 DELETE FROM receipt_extraction_envelopes WHERE envelope_id = 'env_syn_fork';
 
