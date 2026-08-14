@@ -135,6 +135,14 @@ test("canonical synthetic extraction satisfies the Worker intake contract", () =
   assert.deepEqual(validateReceiptExtractionEnvelope(canonicalFixture.envelope), []);
 });
 
+test("structured intake requires RFC3339 date-time values", () => {
+  const invalid = {
+    ...canonicalFixture.envelope,
+    extracted_at: "January 15, 2026 18:00:00 UTC",
+  };
+  assert.deepEqual(validateReceiptExtractionEnvelope(invalid), ["extracted_at"]);
+});
+
 test("structured intake rejects invalid contracts before D1 writes", async () => {
   const db = statefulStructuredDb();
   const invalid = { ...canonicalFixture.envelope, record_kind: "purchase" };
@@ -142,6 +150,25 @@ test("structured intake rejects invalid contracts before D1 writes", async () =>
 
   assert.equal(response.status, 422);
   assert.deepEqual(await response.json(), { error: "invalid_contract", violations: ["record_kind"] });
+  assert.equal(db.state.batches.length, 0);
+});
+
+test("structured intake caps receipt lines below the D1 Free-plan query budget", async () => {
+  const db = statefulStructuredDb();
+  const line = canonicalFixture.envelope.lines[0];
+  const tooMany = {
+    ...canonicalFixture.envelope,
+    envelope_id: "env_syn_too_many",
+    lines: Array.from({ length: 41 }, (_, index) => ({
+      ...line,
+      line_id: `line_syn_budget_${index + 1}`,
+      line_number: index + 1,
+    })),
+  };
+
+  const response = await worker.fetch(extractionRequest(tooMany), env({ DB: db }));
+  assert.equal(response.status, 422);
+  assert.deepEqual(await response.json(), { error: "invalid_contract", violations: ["lines"] });
   assert.equal(db.state.batches.length, 0);
 });
 
