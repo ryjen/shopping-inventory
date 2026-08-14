@@ -17,3 +17,17 @@ test("structured intake rejects calendar-impossible RFC3339-shaped timestamps", 
 
   assert.deepEqual(validateReceiptExtractionEnvelope(impossible), ["extracted_at"]);
 });
+
+test("structured intake rejects pathological line counts while allowing realistic large receipts", () => {
+  const line = fixture.envelope.lines[0];
+  const oversized = {
+    ...fixture.envelope,
+    lines: Array.from({ length: 501 }, (_, index) => ({
+      ...line,
+      line_id: `line_syn_limit_${index + 1}`,
+      line_number: index + 1,
+    })),
+  };
+
+  assert.deepEqual(validateReceiptExtractionEnvelope(oversized), ["lines"]);
+});
