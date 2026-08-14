@@ -29,3 +29,4 @@ expect_failure "non-item candidate provenance" test/fixtures/d1/authoritative-no
 expect_failure "unapproved purchase promotion" test/fixtures/d1/authoritative-unapproved-negative.sql
 expect_failure "correction fork" test/fixtures/d1/authoritative-fork-negative.sql
 expect_failure "post-promotion approval rewrite" test/fixtures/d1/authoritative-approved-state-negative.sql
+expect_failure "authoritative purchase in-place update" test/fixtures/d1/authoritative-purchase-update-negative.sql
