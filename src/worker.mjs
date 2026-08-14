@@ -9,7 +9,7 @@ const MAX_EXTRACTION_BYTES = 1024 * 1024;
 // transaction containing one envelope INSERT, N raw-row INSERTs, and one audit INSERT.
 const MAX_EXTRACTION_LINES = 40;
 const SAFE_ID = /^[a-zA-Z0-9_-]{1,128}$/;
-const RFC3339_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/i;
+const RFC3339_DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,9})?(?:Z|[+-](\d{2}):(\d{2}))$/i;
 const SOURCE_TYPES = new Set(["receipt_image", "receipt_pdf", "order_email", "manual", "synthetic"]);
 const LINE_TYPES = new Set(["item", "fee", "deposit", "discount", "coupon", "subtotal", "tax", "total", "informational", "return", "refund", "void"]);
 const ENVELOPE_KEYS = new Set(["schema_version", "record_kind", "envelope_id", "source", "extractor", "extracted_at", "merchant_raw", "purchased_at_raw", "purchased_at", "currency", "receipt_total", "lines"]);
@@ -70,11 +70,38 @@ function isNullableString(value, maxLength = 4096) {
   return value === undefined || value === null || (typeof value === "string" && value.length <= maxLength);
 }
 
+function isLeapYear(year) {
+  return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+}
+
+function daysInMonth(year, month) {
+  if (month === 2) return isLeapYear(year) ? 29 : 28;
+  if (month === 4 || month === 6 || month === 9 || month === 11) return 30;
+  return 31;
+}
+
 function isDateTime(value) {
-  return typeof value === "string" &&
-    value.length <= 64 &&
-    RFC3339_DATE_TIME.test(value) &&
-    Number.isFinite(Date.parse(value));
+  if (typeof value !== "string" || value.length > 64) return false;
+  const match = value.match(RFC3339_DATE_TIME);
+  if (!match) return false;
+
+  const [, yearText, monthText, dayText, hourText, minuteText, secondText, offsetHourText, offsetMinuteText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+  const second = Number(secondText);
+  const offsetHour = offsetHourText === undefined ? 0 : Number(offsetHourText);
+  const offsetMinute = offsetMinuteText === undefined ? 0 : Number(offsetMinuteText);
+
+  return month >= 1 && month <= 12 &&
+    day >= 1 && day <= daysInMonth(year, month) &&
+    hour >= 0 && hour <= 23 &&
+    minute >= 0 && minute <= 59 &&
+    second >= 0 && second <= 59 &&
+    offsetHour >= 0 && offsetHour <= 23 &&
+    offsetMinute >= 0 && offsetMinute <= 59;
 }
 
 function isMoney(value) {
