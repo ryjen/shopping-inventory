@@ -14,6 +14,7 @@
     "test:n8n:e2e": "node --test test/n8n-workflow-simulation.test.mjs",
     "test:n8n:import": "bash scripts/test-n8n-import.sh",
     "test:cloudflare": "node --test test/cloudflare-worker*.test.mjs",
+    "test:d1:staging": "wrangler d1 execute shopping-inventory-dev --local --file=test/fixtures/d1/staging-smoke.sql",
     "cf:dev": "wrangler dev --local",
     "cf:migrate:local": "wrangler d1 migrations apply shopping-inventory-dev --local"
   },
