@@ -43,6 +43,9 @@ jobs:
       - name: Validate local D1 migrations
         run: npm run cf:migrate:local
 
+      - name: Exercise D1 structured staging SQL
+        run: npm run test:d1:staging
+
       - name: Run n8n unit tests
         run: npm run test:n8n:unit
 
