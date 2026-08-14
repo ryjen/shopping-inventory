@@ -67,7 +67,9 @@ The repository currently includes:
 - a D1 migration for receipt evidence metadata and audit events;
 - private R2 receipt upload and retrieval paths;
 - compensating cleanup when D1 persistence fails;
-- synthetic Cloudflare tests;
+- versioned JSON Schema contracts for the receipt-to-purchase path with executable validation;
+- repository-wide privacy validation and agent pre-write guardrails;
+- synthetic Cloudflare and canonical-contract tests;
 - privacy-focused Git ignore rules and contribution checks.
 
 The current milestone is **privacy and schema stabilization**:
@@ -86,8 +88,9 @@ automation/n8n/          Conservative ingestion workflows
 docs/                    Architecture, policies, schemas, and runbooks
 evaluation/              Synthetic regression fixtures
 migrations/              D1/SQLite-compatible migrations
+schemas/                 Versioned machine-readable contracts
 src/                     Cloudflare Worker implementation
-test/                    Unit, integration, and simulation tests
+test/                    Unit, integration, contract, and simulation tests
 ```
 
 ## Development
@@ -97,20 +100,27 @@ Requirements:
 - Node.js 20 or newer
 - npm
 
-Run tests:
+Install dependencies and run tests:
 
 ```bash
+npm install
 npm test
+npm run test:contracts
 npm run test:cloudflare
 npm run test:n8n:unit
 npm run test:n8n:integration
 npm run test:n8n:e2e
 ```
 
+Run the repository privacy gate locally:
+
+```bash
+npm run privacy:check
+```
+
 Run the Worker locally with synthetic data:
 
 ```bash
-npm install
 npm run cf:migrate:local
 npm run cf:dev
 ```
@@ -129,6 +139,7 @@ Production credentials and Cloudflare resource identifiers must remain outside t
 ### Data contracts and behavior
 
 - [Architecture](docs/architecture.md)
+- [Canonical contracts v1](docs/schema/canonical-contracts-v1.md)
 - [Sheet schema overview](docs/schema/README.md)
 - [Raw import schemas](docs/schema/raw-imports.md)
 - [Ledger and derived schemas](docs/schema/ledger-and-derived.md)
@@ -145,4 +156,4 @@ Production credentials and Cloudflare resource identifiers must remain outside t
 
 ## Status
 
-Early implementation. The private Cloudflare storage boundary exists, but production resources have not been provisioned and real personal data must not be added until the privacy audit and operational controls are complete.
+Early implementation. The private Cloudflare storage boundary exists, but production resources have not been provisioned and real personal data must not be added until the private ingestion path and operational controls are complete.
