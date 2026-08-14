@@ -46,6 +46,9 @@ jobs:
       - name: Exercise D1 structured staging SQL
         run: npm run test:d1:staging
 
+      - name: Exercise authoritative D1 invariants
+        run: npm run test:d1:authoritative
+
       - name: Run n8n unit tests
         run: npm run test:n8n:unit
 
