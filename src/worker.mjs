@@ -4,10 +4,7 @@ const JSON_HEADERS = {
 };
 const MAX_RECEIPT_BYTES = 10 * 1024 * 1024;
 const MAX_EXTRACTION_BYTES = 1024 * 1024;
-// Keep enough headroom under D1's Free-plan 50-query Worker invocation limit.
-// One intake performs an idempotency SELECT, optional evidence SELECT, and a
-// transaction containing one envelope INSERT, N raw-row INSERTs, and one audit INSERT.
-const MAX_EXTRACTION_LINES = 40;
+const MAX_EXTRACTION_LINES = 500;
 const SAFE_ID = /^[a-zA-Z0-9_-]{1,128}$/;
 const RFC3339_DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,9})?(?:Z|[+-](\d{2}):(\d{2}))$/i;
 const SOURCE_TYPES = new Set(["receipt_image", "receipt_pdf", "order_email", "manual", "synthetic"]);
@@ -246,6 +243,21 @@ async function existingExtraction(env, envelopeId, payloadSha256) {
   };
 }
 
+function rawRowsJson(importRows) {
+  return JSON.stringify(importRows.map(({ importId, line }) => ({
+    import_id: importId,
+    line_id: line.line_id,
+    line_number: line.line_number,
+    line_type: line.line_type,
+    raw_text: line.raw_text,
+    quantity: line.quantity ?? null,
+    unit: line.unit ?? null,
+    unit_price: line.unit_price ?? null,
+    extended_price: line.extended_price ?? null,
+    parse_confidence: line.parse_confidence,
+  })));
+}
+
 async function handleStructuredExtraction(request, env) {
   const contentType = (request.headers.get("content-type") ?? "").split(";", 1)[0].trim().toLowerCase();
   if (contentType !== "application/json") return json(415, { error: "unsupported_media_type" });
@@ -311,27 +323,37 @@ async function handleStructuredExtraction(request, env) {
       payloadSha256,
       createdAt,
     ),
-    ...importRows.map(({ importId, line }) => env.DB.prepare(
+    env.DB.prepare(
       `INSERT INTO import_raw_rows
         (import_id, envelope_id, schema_version, record_kind, line_id, source_type, source_id, evidence_id, line_number, line_type, raw_text, quantity, unit, unit_price, extended_price, parse_confidence, review_state, created_at)
-       VALUES (?, ?, '1.0.0', 'import_raw_row', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?)`,
+       SELECT
+        json_extract(value, '$.import_id'),
+        ?,
+        '1.0.0',
+        'import_raw_row',
+        json_extract(value, '$.line_id'),
+        ?,
+        ?,
+        ?,
+        json_extract(value, '$.line_number'),
+        json_extract(value, '$.line_type'),
+        json_extract(value, '$.raw_text'),
+        json_extract(value, '$.quantity'),
+        json_extract(value, '$.unit'),
+        json_extract(value, '$.unit_price'),
+        json_extract(value, '$.extended_price'),
+        json_extract(value, '$.parse_confidence'),
+        'new',
+        ?
+       FROM json_each(?)`,
     ).bind(
-      importId,
       envelope.envelope_id,
-      line.line_id,
       envelope.source.source_type,
       envelope.source.source_id,
       envelope.source.evidence_id ?? null,
-      line.line_number,
-      line.line_type,
-      line.raw_text,
-      line.quantity ?? null,
-      line.unit ?? null,
-      line.unit_price ?? null,
-      line.extended_price ?? null,
-      line.parse_confidence,
       createdAt,
-    )),
+      rawRowsJson(importRows),
+    ),
     env.DB.prepare(
       `INSERT INTO audit_events
         (event_id, actor_id, action, target_kind, target_id, occurred_at, metadata_json)
@@ -346,8 +368,11 @@ async function handleStructuredExtraction(request, env) {
 
   try {
     const results = await env.DB.batch(statements);
-    if (!Array.isArray(results) || results.some((result) => result?.success === false)) {
+    if (!Array.isArray(results) || results.length !== statements.length || results.some((result) => result?.success === false)) {
       throw new Error("D1 batch reported failure");
+    }
+    if (results[1]?.meta?.rows_written !== undefined && results[1].meta.rows_written !== importRows.length) {
+      throw new Error("D1 bulk raw-row insert count mismatch");
     }
   } catch (error) {
     // Handle a concurrent retry that won the insert race before treating the write as unavailable.
