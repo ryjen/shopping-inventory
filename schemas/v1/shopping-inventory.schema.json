@@ -2,6 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.invalid/shopping-inventory/schemas/v1/shopping-inventory.schema.json",
   "title": "Shopping Inventory canonical contracts v1",
+  "oneOf": [
+    {"$ref":"#/$defs/receiptExtractionEnvelope"},
+    {"$ref":"#/$defs/importRawRow"},
+    {"$ref":"#/$defs/purchaseCandidate"},
+    {"$ref":"#/$defs/purchase"}
+  ],
   "$defs": {
     "money": {"type":"number","multipleOf":0.01},
     "confidence": {"type":"number","minimum":0,"maximum":1},
