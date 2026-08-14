@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join as joinPath } from "node:path";
 import test from "node:test";
 
-import { scanText } from "../scripts/privacy-guard.mjs";
+import { scanFile, scanText } from "../scripts/privacy-guard.mjs";
 
 const join = (...parts) => parts.join("");
 
@@ -98,6 +101,17 @@ test("rejects known private/import locations even with harmless content", () => 
   assert.deepEqual(scanText(".private/cache.json", "{}"), [
     "prohibited-private-path",
   ]);
+});
+
+test("fails closed when a tracked file is binary", async () => {
+  const directory = await mkdtemp(joinPath(tmpdir(), "shopping-privacy-"));
+  const file = joinPath(directory, "renamed-receipt.bin");
+  try {
+    await writeFile(file, Uint8Array.from([0x89, 0x50, 0x00, 0x47]));
+    assert.deepEqual(await scanFile(file), ["unscannable-tracked-file"]);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 });
 
 test("ordinary source and documentation text is unaffected", () => {
