@@ -1,0 +1,48 @@
+{
+  "synthetic": true,
+  "envelope": {
+    "schema_version": "1.0.0",
+    "record_kind": "receipt_extraction_envelope",
+    "envelope_id": "env_syn_slice_001",
+    "source": {"source_type":"synthetic","source_id":"src_syn_slice_001","evidence_id":null},
+    "extractor": "synthetic-vertical-slice",
+    "extracted_at": "2026-01-15T18:00:00Z",
+    "merchant_raw": "Orbit Market",
+    "purchased_at_raw": "2026-01-15 10:00",
+    "purchased_at": "2026-01-15T10:00:00Z",
+    "currency": "CAD",
+    "receipt_total": 7.41,
+    "lines": [
+      {"line_id":"line_syn_slice_001","line_number":1,"line_type":"item","raw_text":"MOON PEARS 1 EA 4.00","description_raw":"MOON PEARS","quantity":1,"unit":"each","unit_price":4.00,"extended_price":4.00,"tax_code":null,"parse_confidence":0.99,"notes":[]},
+      {"line_id":"line_syn_slice_002","line_number":2,"line_type":"item","raw_text":"MYST HERB 1 EA 3.00","description_raw":"MYST HERB","quantity":1,"unit":"each","unit_price":3.00,"extended_price":3.00,"tax_code":null,"parse_confidence":0.72,"notes":["synthetic ambiguous abbreviation"]},
+      {"line_id":"line_syn_slice_003","line_number":3,"line_type":"deposit","raw_text":"SYNTHETIC DEPOSIT 0.10","description_raw":null,"quantity":null,"unit":null,"unit_price":null,"extended_price":0.10,"tax_code":null,"parse_confidence":0.99,"notes":[]},
+      {"line_id":"line_syn_slice_004","line_number":4,"line_type":"tax","raw_text":"SYNTHETIC TAX 0.31","description_raw":null,"quantity":null,"unit":null,"unit_price":null,"extended_price":0.31,"tax_code":"GST","parse_confidence":0.99,"notes":[]},
+      {"line_id":"line_syn_slice_005","line_number":5,"line_type":"total","raw_text":"TOTAL 7.41","description_raw":null,"quantity":null,"unit":null,"unit_price":null,"extended_price":7.41,"tax_code":null,"parse_confidence":0.99,"notes":[]}
+    ]
+  },
+  "catalog": {
+    "MOON PEARS 1 EA 4.00": {
+      "canonical_item_id": "item_moon_pear",
+      "normalization_confidence": 0.98,
+      "budget_category": "groceries_food",
+      "half_life_days": 5
+    },
+    "MYST HERB 1 EA 3.00": {
+      "canonical_item_id": "item_moon_herb",
+      "normalization_confidence": 0.55,
+      "budget_category": "groceries_food",
+      "half_life_days": 4
+    }
+  },
+  "review_decisions": {
+    "cand_syn_slice_001": "approved"
+  },
+  "clock": {
+    "raw_created_at": "2026-01-15T18:00:01Z",
+    "candidate_created_at": "2026-01-15T18:01:00Z",
+    "purchase_created_at": "2026-01-15T18:02:00Z",
+    "as_of": "2026-01-23T10:00:00Z",
+    "generated_at": "2026-01-23T10:00:01Z"
+  },
+  "budget_period": "2026-01"
+}
