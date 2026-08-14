@@ -52,6 +52,22 @@ test("synthetic fixture markers outside fixture directories are not exemptions",
   ]);
 });
 
+test("markdown synthetic-example marker exempts only its immediate fenced block", () => {
+  const marked = [
+    "# Public example",
+    "<!-- privacy-guard: synthetic-example -->",
+    "```json",
+    syntheticReceipt,
+    "```",
+  ].join("\n");
+  assert.deepEqual(scanText("docs/example.md", marked), []);
+
+  const unmarkedSecondBlock = `${marked}\n\n\`\`\`json\n${realLookingReceipt}\n\`\`\``;
+  assert.deepEqual(scanText("docs/example.md", unmarkedSecondBlock), [
+    "likely-real-transaction-payload",
+  ]);
+});
+
 test("synthetic fixtures do not exempt personal identifiers", () => {
   const privateEmail = join("person", "@", "private-domain", ".ca");
   const content = `${syntheticReceipt}\ncustomer_email: ${privateEmail}`;
