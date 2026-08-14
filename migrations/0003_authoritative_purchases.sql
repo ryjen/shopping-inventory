@@ -14,7 +14,9 @@ CREATE TABLE purchase_candidates (
   canonical_item_id TEXT NOT NULL CHECK (length(canonical_item_id) > 0),
   quantity REAL NOT NULL CHECK (quantity > 0),
   unit TEXT,
-  amount REAL,
+  amount REAL CHECK (
+    amount IS NULL OR abs((amount * 100.0) - round(amount * 100.0)) < 0.000001
+  ),
   normalization_confidence REAL CHECK (
     normalization_confidence IS NULL OR
     (normalization_confidence >= 0.0 AND normalization_confidence <= 1.0)
@@ -43,7 +45,9 @@ CREATE TABLE purchases (
   canonical_item_id TEXT NOT NULL CHECK (length(canonical_item_id) > 0),
   quantity REAL NOT NULL CHECK (quantity > 0),
   unit TEXT,
-  amount REAL,
+  amount REAL CHECK (
+    amount IS NULL OR abs((amount * 100.0) - round(amount * 100.0)) < 0.000001
+  ),
   acquired_at TEXT,
   supersedes_id TEXT UNIQUE,
   created_at TEXT NOT NULL,
