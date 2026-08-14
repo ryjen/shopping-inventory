@@ -43,8 +43,8 @@ Receipt objects use generated opaque identifiers without merchant, date, address
 
 `POST /v1/receipt-extractions` is deliberately a **raw/staging** boundary:
 
-1. accept only bounded `application/json` requests;
-2. validate the canonical v1 extraction-envelope fields and identifiers;
+1. accept only `application/json` requests up to 1 MiB and at most 40 receipt lines;
+2. validate the canonical v1 extraction-envelope fields, RFC3339 timestamps, identifiers, and line uniqueness;
 3. preserve the immutable extraction envelope as canonical JSON in `receipt_extraction_envelopes`;
 4. flatten every receipt line into a generated `ImportRawRow` staging record;
 5. link to an existing private `receipt_evidence` record when `evidence_id` is supplied;
@@ -52,6 +52,8 @@ Receipt objects use generated opaque identifiers without merchant, date, address
 7. treat repeated identical `envelope_id` + payload as idempotent;
 8. reject reuse of an `envelope_id` for different content;
 9. return only opaque envelope/import identifiers.
+
+The 40-line bound leaves operational headroom under the current D1 Free-plan per-invocation query budget for the idempotency lookup, optional evidence lookup, transactional writes, and a bounded concurrent-retry recheck. If the provider limit changes, the bound and its regression test should be reviewed together.
 
 This endpoint does **not** create `Purchase`, `Stock`, `BudgetExport`, or recommendation state. Promotion remains a separate review/domain boundary.
 
