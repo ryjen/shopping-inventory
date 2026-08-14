@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/shopping-inventory/schemas/v1/derived.schema.json",
+  "title": "Shopping Inventory derived contracts v1",
+  "oneOf": [
+    {"$ref":"#/$defs/stockSnapshot"},
+    {"$ref":"#/$defs/budgetExport"},
+    {"$ref":"#/$defs/shoppingRecommendation"}
+  ],
+  "$defs": {
+    "money": {"type":"number","multipleOf":0.01},
+    "confidence": {"type":"number","minimum":0,"maximum":1},
+    "opaqueId": {"type":"string","pattern":"^[a-zA-Z0-9_-]+$","minLength":1,"maxLength":128},
+    "stockState": {"enum":["none","low","available","stocked","unknown"]},
+    "stockMethod": {
+      "type":"object",
+      "required":["name","half_life_days"],
+      "properties": {
+        "name":{"const":"exponential_decay_v1"},
+        "half_life_days":{"type":"number","exclusiveMinimum":0}
+      },
+      "additionalProperties":false
+    },
+    "stockSnapshot": {
+      "type":"object",
+      "required":["schema_version","record_kind","snapshot_id","canonical_item_id","state","quantity_estimate","unit","confidence","as_of","source_purchase_ids","method"],
+      "properties": {
+        "schema_version":{"const":"1.0.0"},
+        "record_kind":{"const":"stock_snapshot"},
+        "snapshot_id":{"$ref":"#/$defs/opaqueId"},
+        "canonical_item_id":{"type":"string","minLength":1},
+        "state":{"$ref":"#/$defs/stockState"},
+        "quantity_estimate":{"anyOf":[{"type":"number","minimum":0},{"type":"null"}]},
+        "unit":{"type":["string","null"]},
+        "confidence":{"$ref":"#/$defs/confidence"},
+        "as_of":{"type":"string","format":"date-time"},
+        "source_purchase_ids":{"type":"array","minItems":1,"uniqueItems":true,"items":{"$ref":"#/$defs/opaqueId"}},
+        "method":{"$ref":"#/$defs/stockMethod"}
+      },
+      "additionalProperties":false
+    },
+    "budgetCategory": {
+      "enum":["groceries_food","groceries_household","pet","personal_care","pharmacy","misc_retail"]
+    },
+    "budgetRow": {
+      "type":"object",
+      "required":["category","amount","purchase_ids"],
+      "properties": {
+        "category":{"$ref":"#/$defs/budgetCategory"},
+        "amount":{"$ref":"#/$defs/money"},
+        "purchase_ids":{"type":"array","minItems":1,"uniqueItems":true,"items":{"$ref":"#/$defs/opaqueId"}}
+      },
+      "additionalProperties":false
+    },
+    "budgetExport": {
+      "type":"object",
+      "required":["schema_version","record_kind","export_id","period","currency","rows","total_amount","generated_at"],
+      "properties": {
+        "schema_version":{"const":"1.0.0"},
+        "record_kind":{"const":"budget_export"},
+        "export_id":{"$ref":"#/$defs/opaqueId"},
+        "period":{"type":"string","pattern":"^[0-9]{4}-(0[1-9]|1[0-2])$"},
+        "currency":{"type":"string","pattern":"^[A-Z]{3}$"},
+        "rows":{"type":"array","items":{"$ref":"#/$defs/budgetRow"}},
+        "total_amount":{"$ref":"#/$defs/money"},
+        "generated_at":{"type":"string","format":"date-time"}
+      },
+      "additionalProperties":false
+    },
+    "recommendationEvidence": {
+      "type":"object",
+      "required":["stock_snapshot_id","purchase_ids"],
+      "properties": {
+        "stock_snapshot_id":{"$ref":"#/$defs/opaqueId"},
+        "purchase_ids":{"type":"array","minItems":1,"uniqueItems":true,"items":{"$ref":"#/$defs/opaqueId"}}
+      },
+      "additionalProperties":false
+    },
+    "shoppingRecommendation": {
+      "type":"object",
+      "required":["schema_version","record_kind","recommendation_id","canonical_item_id","action","urgency","confidence","reason_codes","rationale","evidence","generated_at"],
+      "properties": {
+        "schema_version":{"const":"1.0.0"},
+        "record_kind":{"const":"shopping_recommendation"},
+        "recommendation_id":{"$ref":"#/$defs/opaqueId"},
+        "canonical_item_id":{"type":"string","minLength":1},
+        "action":{"const":"buy"},
+        "urgency":{"enum":["low","medium","high"]},
+        "confidence":{"$ref":"#/$defs/confidence"},
+        "reason_codes":{"type":"array","minItems":1,"uniqueItems":true,"items":{"enum":["estimated_low_stock","estimated_no_stock"]}},
+        "rationale":{"type":"string","minLength":1,"maxLength":1000},
+        "evidence":{"$ref":"#/$defs/recommendationEvidence"},
+        "generated_at":{"type":"string","format":"date-time"}
+      },
+      "additionalProperties":false
+    }
+  }
+}
