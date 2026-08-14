@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { execFileSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 
 const MAX_TEXT_BYTES = 2 * 1024 * 1024;
@@ -45,6 +46,12 @@ function isPlaceholderEmailDomain(domain) {
 function isProbablyBinary(buffer) {
   const sample = buffer.subarray(0, Math.min(buffer.length, 4096));
   return sample.includes(0);
+}
+
+function trackedFiles() {
+  return execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" })
+    .split("\0")
+    .filter(Boolean);
 }
 
 export function scanText(filePath, text) {
@@ -98,7 +105,8 @@ export async function scanFile(filePath) {
   return [...new Set([...pathViolations, ...scanText(path, buffer.toString("utf8"))])].sort();
 }
 
-async function main(paths) {
+async function main(args) {
+  const paths = args.length === 1 && args[0] === "--tracked" ? trackedFiles() : args;
   if (paths.length === 0) {
     console.error("privacy-guard: no files supplied");
     process.exitCode = 2;
