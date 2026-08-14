@@ -65,15 +65,22 @@ function statefulStructuredDb({ evidenceIds = [] } = {}) {
           payload_sha256: envelopeInsert.args[9],
         };
       }
-      for (const item of statements.filter((candidate) => candidate.sql.includes("INSERT INTO import_raw_rows"))) {
+
+      const rawInsert = statements.find((item) => item.sql.includes("INSERT INTO import_raw_rows"));
+      const rawRows = rawInsert ? JSON.parse(rawInsert.args[5]) : [];
+      for (const row of rawRows) {
         state.imports.push({
-          import_id: item.args[0],
-          envelope_id: item.args[1],
-          line_id: item.args[2],
-          line_number: item.args[6],
+          import_id: row.import_id,
+          envelope_id: rawInsert.args[0],
+          line_id: row.line_id,
+          line_number: row.line_number,
         });
       }
-      return statements.map(() => ({ success: true }));
+
+      return statements.map((item) => ({
+        success: true,
+        meta: { rows_written: item === rawInsert ? rawRows.length : 1 },
+      }));
     },
   };
 
@@ -153,23 +160,30 @@ test("structured intake rejects invalid contracts before D1 writes", async () =>
   assert.equal(db.state.batches.length, 0);
 });
 
-test("structured intake caps receipt lines below the D1 Free-plan query budget", async () => {
+test("structured intake bulk-stages a large receipt with a fixed three-statement transaction", async () => {
   const db = statefulStructuredDb();
   const line = canonicalFixture.envelope.lines[0];
-  const tooMany = {
+  const large = {
     ...canonicalFixture.envelope,
-    envelope_id: "env_syn_too_many",
-    lines: Array.from({ length: 41 }, (_, index) => ({
+    envelope_id: "env_syn_large",
+    lines: Array.from({ length: 120 }, (_, index) => ({
       ...line,
-      line_id: `line_syn_budget_${index + 1}`,
+      line_id: `line_syn_bulk_${index + 1}`,
       line_number: index + 1,
     })),
   };
 
-  const response = await worker.fetch(extractionRequest(tooMany), env({ DB: db }));
-  assert.equal(response.status, 422);
-  assert.deepEqual(await response.json(), { error: "invalid_contract", violations: ["lines"] });
-  assert.equal(db.state.batches.length, 0);
+  const response = await worker.fetch(extractionRequest(large), env({ DB: db }));
+  const body = await response.json();
+  assert.equal(response.status, 201);
+  assert.equal(body.imports.length, 120);
+  assert.equal(db.state.batches.length, 1);
+  assert.equal(db.state.batches[0].length, 3);
+
+  const rawInsert = db.state.batches[0].find((item) => item.sql.includes("INSERT INTO import_raw_rows"));
+  assert.ok(rawInsert);
+  assert.match(rawInsert.sql, /FROM json_each\(\?\)/);
+  assert.equal(JSON.parse(rawInsert.args[5]).length, 120);
 });
 
 test("structured intake rejects unsupported media type and malformed JSON", async () => {
@@ -210,6 +224,7 @@ test("structured intake atomically stages envelope, raw rows, and payload-free a
   assert.equal(body.imports.length, canonicalFixture.envelope.lines.length);
   assert.equal(body.idempotent, false);
   assert.equal(db.state.batches.length, 1);
+  assert.equal(db.state.batches[0].length, 3);
 
   const sql = db.state.batches[0].map((item) => item.sql).join("\n").toLowerCase();
   assert.match(sql, /insert into receipt_extraction_envelopes/);
