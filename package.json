@@ -7,6 +7,7 @@
   "scripts": {
     "test": "node --test test/*.test.mjs",
     "privacy:check": "node scripts/privacy-guard.mjs --tracked",
+    "test:contracts": "node --test test/canonical-contracts.test.mjs",
     "test:n8n": "node --test test/n8n-*.test.mjs",
     "test:n8n:unit": "node --test test/n8n-code-nodes.test.mjs",
     "test:n8n:integration": "node --test test/n8n-workflows.test.mjs test/n8n-workflow-simulation.test.mjs",
@@ -17,6 +18,8 @@
     "cf:migrate:local": "wrangler d1 migrations apply shopping-inventory-dev --local"
   },
   "devDependencies": {
+    "ajv": "8.20.0",
+    "ajv-formats": "2.1.1",
     "wrangler": "^4.0.0"
   },
   "engines": {
