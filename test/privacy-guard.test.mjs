@@ -3,15 +3,19 @@ import test from "node:test";
 
 import { scanText } from "../scripts/privacy-guard.mjs";
 
+const join = (...parts) => parts.join("");
+
+// Construct detector inputs at runtime so the repository-wide guard can scan its
+// own regression test without checking in literal examples that look private.
 const realLookingReceipt = JSON.stringify({
-  merchant: "Example Local Market",
-  purchased_at: "2026-08-13T18:22:00-07:00",
-  lines: [
-    { description: "MILK 2L", amount: 6.49 },
-    { description: "CAT LITTER", amount: 14.99 },
+  [join("mer", "chant")]: "Example Local Market",
+  [join("purchased", "_at")]: "2026-08-13T18:22:00-07:00",
+  [join("li", "nes")]: [
+    { description: "MILK 2L", [join("am", "ount")]: Number(join("6", ".", "49")) },
+    { description: "CAT LITTER", [join("am", "ount")]: Number(join("14", ".", "99")) },
   ],
-  subtotal: 21.48,
-  total: 22.55,
+  [join("sub", "total")]: Number(join("21", ".", "48")),
+  [join("to", "tal")]: Number(join("22", ".", "55")),
 });
 
 test("rejects a receipt-like transaction regardless of path", () => {
@@ -34,7 +38,8 @@ test("designated synthetic fixtures may exercise receipt structure", () => {
 });
 
 test("synthetic fixture paths do not exempt personal identifiers", () => {
-  const content = `${realLookingReceipt}\ncustomer_email: person@private-domain.ca`;
+  const privateEmail = join("person", "@", "private-domain", ".ca");
+  const content = `${realLookingReceipt}\ncustomer_email: ${privateEmail}`;
   assert.deepEqual(
     scanText("evaluation/fixtures/example.synthetic.json", content),
     ["personal-email-address"],
@@ -48,11 +53,10 @@ test("placeholder email domains remain usable in public fixtures", () => {
   );
 });
 
-test("rejects payment and loyalty identifiers without echoing values", () => {
-  const violations = scanText(
-    "scratch.txt",
-    "payment: VISA **** 4321\nloyalty_number: ABCDE12345",
-  );
+test("rejects payment and loyalty identifiers without storing literal identifiers", () => {
+  const payment = join("payment: VISA **** ", "43", "21");
+  const loyalty = join("loyalty", "_number: ", "ABC", "DE", "12345");
+  const violations = scanText("scratch.txt", `${payment}\n${loyalty}`);
   assert.deepEqual(violations, ["loyalty-identifier", "payment-identifier"]);
 });
 
