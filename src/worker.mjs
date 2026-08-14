@@ -4,8 +4,12 @@ const JSON_HEADERS = {
 };
 const MAX_RECEIPT_BYTES = 10 * 1024 * 1024;
 const MAX_EXTRACTION_BYTES = 1024 * 1024;
-const MAX_EXTRACTION_LINES = 500;
+// Keep enough headroom under D1's Free-plan 50-query Worker invocation limit.
+// One intake performs an idempotency SELECT, optional evidence SELECT, and a
+// transaction containing one envelope INSERT, N raw-row INSERTs, and one audit INSERT.
+const MAX_EXTRACTION_LINES = 40;
 const SAFE_ID = /^[a-zA-Z0-9_-]{1,128}$/;
+const RFC3339_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/i;
 const SOURCE_TYPES = new Set(["receipt_image", "receipt_pdf", "order_email", "manual", "synthetic"]);
 const LINE_TYPES = new Set(["item", "fee", "deposit", "discount", "coupon", "subtotal", "tax", "total", "informational", "return", "refund", "void"]);
 const ENVELOPE_KEYS = new Set(["schema_version", "record_kind", "envelope_id", "source", "extractor", "extracted_at", "merchant_raw", "purchased_at_raw", "purchased_at", "currency", "receipt_total", "lines"]);
@@ -67,7 +71,10 @@ function isNullableString(value, maxLength = 4096) {
 }
 
 function isDateTime(value) {
-  return typeof value === "string" && value.length <= 64 && value.includes("T") && Number.isFinite(Date.parse(value));
+  return typeof value === "string" &&
+    value.length <= 64 &&
+    RFC3339_DATE_TIME.test(value) &&
+    Number.isFinite(Date.parse(value));
 }
 
 function isMoney(value) {
@@ -324,7 +331,10 @@ async function handleStructuredExtraction(request, env) {
     } catch {
       // Fall through to the bounded storage error below.
     }
-    console.error("failed to persist structured receipt extraction", { envelopeId: envelope.envelope_id, error });
+    console.error("failed to persist structured receipt extraction", {
+      envelopeId: envelope.envelope_id,
+      errorName: error instanceof Error ? error.name : "UnknownError",
+    });
     return json(503, { error: "storage_unavailable" });
   }
 
@@ -394,7 +404,10 @@ async function handleReceiptUpload(request, env) {
     } catch {
       console.error("failed to remove orphaned receipt evidence", { evidenceId });
     }
-    console.error("failed to persist receipt evidence metadata", { evidenceId, error });
+    console.error("failed to persist receipt evidence metadata", {
+      evidenceId,
+      errorName: error instanceof Error ? error.name : "UnknownError",
+    });
     return json(503, { error: "storage_unavailable" });
   }
 
