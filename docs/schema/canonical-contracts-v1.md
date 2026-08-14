@@ -8,7 +8,8 @@ Each stage owns a different kind of truth. A nested extraction payload is not a 
 flowchart LR
   E[ReceiptExtractionEnvelope] --> R[ImportRawRow]
   R --> C[PurchaseCandidate]
-  C -->|approved| P[Purchase]
+  C -->|approved item only| P[Purchase]
+  R -->|ambiguous or unsupported promotion| Q[Review]
   P --> S[Derived Stock]
   P --> B[Budget Export]
 ```
@@ -19,38 +20,42 @@ flowchart LR
 | --- | --- | --- | --- |
 | `ReceiptExtractionEnvelope` | extractor | none after persistence | Preserve one extraction attempt and receipt-level context |
 | `ImportRawRow` | ingestion pipeline | workflow review metadata only | Flatten line evidence for review and replay |
-| `PurchaseCandidate` | normalization pipeline | review decision and explicit overrides | Propose a canonical interpretation |
+| `PurchaseCandidate` | normalization pipeline | review decision and explicit overrides | Propose a canonical acquisition interpretation |
 | `Purchase` | reviewer/domain service | never updated in place; supersede instead | Authoritative acquisition ledger |
 | `Stock` / `BudgetExport` | derived processors | fully recomputable | Operational views, never source truth |
 
 ## Required invariants
 
 - Every record carries `schema_version` and `record_kind`.
+- The published schema root accepts exactly one supported canonical record kind; arbitrary objects are invalid.
 - Stable IDs are opaque and must not embed merchant, location, timestamp, or household information.
 - Every downstream record traces to the immediately preceding record.
 - Raw text is preserved only in extraction and raw-import contracts.
 - Suggested or canonical item values never appear in raw evidence contracts.
-- Only `item` lines may create inventory-bearing candidates.
-- Fees, deposits, discounts, coupons, taxes, totals, informational lines, returns, refunds, and voids cannot increase stock.
+- In v1, only `item` lines may create `PurchaseCandidate` records.
+- Fees, deposits, discounts, coupons, taxes, totals, informational lines, returns, refunds, and voids cannot create authoritative purchases or increase stock in v1.
+- `return` is a recognized raw evidence classification but is review-only in v1. A future version may introduce an explicit transaction/adjustment contract rather than overloading the acquisition ledger.
 - Missing purchase dates remain `null`; they are not guessed into authoritative timestamps.
 - Real instances live only in private D1/R2. Public fixtures are materially synthetic.
 
 ## Line classifications
 
-| `line_type` | Financial meaning | Inventory effect |
+| `line_type` | Financial meaning | v1 promotion behavior |
 | --- | --- | --- |
-| `item` | acquired product amount | may create a candidate |
-| `fee` | non-refundable service or handling fee | none |
-| `deposit` | refundable container or similar deposit | none |
-| `discount` | negative price adjustment | none |
-| `coupon` | explicit promotional adjustment | none |
-| `subtotal` | receipt summary | none |
-| `tax` | tax summary | none |
-| `total` | final receipt total | none |
-| `informational` | loyalty/savings/message line | none |
-| `return` | returned item line | negative acquisition adjustment after review |
-| `refund` | money returned without necessarily identifying stock movement | none unless linked to a reviewed return |
-| `void` | cancelled line | none |
+| `item` | acquired product amount | may create a purchase candidate |
+| `fee` | non-refundable service or handling fee | never creates a purchase |
+| `deposit` | refundable container or similar deposit | never creates a purchase |
+| `discount` | negative price adjustment | never creates a purchase |
+| `coupon` | explicit promotional adjustment | never creates a purchase |
+| `subtotal` | receipt summary | never creates a purchase |
+| `tax` | tax summary | never creates a purchase |
+| `total` | final receipt total | never creates a purchase |
+| `informational` | loyalty/savings/message line | never creates a purchase |
+| `return` | returned item evidence | review-only; no v1 promotion |
+| `refund` | money returned without necessarily identifying stock movement | review-only/non-inventory |
+| `void` | cancelled line | never creates a purchase |
+
+The v1 boundary is intentionally conservative. A return changes inventory in the opposite direction from an acquisition and may not be equivalent to a refund. Modeling both through `Purchase` would make the acquisition ledger ambiguous. Until a dedicated adjustment/transaction contract is justified, return evidence remains preserved and reviewable without mutating authoritative purchase or stock state.
 
 ## Prices and weighted items
 
@@ -69,6 +74,12 @@ Authoritative purchases are corrected by creating a replacement purchase with `s
 ## Review-state mutation
 
 Evidence payload fields are immutable. Workflow metadata such as `review_state` may change, but implementations should record review events or audit entries. The row is therefore evidence-immutable, not globally append-only.
+
+## Machine validation
+
+`schemas/v1/shopping-inventory.schema.json` is a JSON Schema 2020-12 bundle with a validating root `oneOf` for the four v1 record kinds. CI validates the synthetic fixture with a general JSON Schema engine and also checks project-specific cross-record invariants such as provenance and promotion boundaries.
+
+Schema validation and domain invariants are deliberately separate: JSON Schema validates the shape and local field constraints of each record, while executable tests validate relationships between records.
 
 ## Versioning
 
