@@ -199,6 +199,44 @@ async function sha256Hex(text) {
   return sha256HexBytes(encoder.encode(text));
 }
 
+function normalizedIdentityText(value) {
+  if (typeof value !== "string") return null;
+  const normalized = value.normalize("NFKC").trim().toLowerCase().replace(/\s+/g, " ");
+  return normalized.length > 0 ? normalized : null;
+}
+
+export async function transactionFingerprintForEnvelope(envelope) {
+  if (!envelope?.purchased_at || envelope.receipt_total === null || envelope.receipt_total === undefined) {
+    return null;
+  }
+
+  const merchant = normalizedIdentityText(envelope.merchant_raw);
+  const sourceIdentity = normalizedIdentityText(envelope.source?.source_id);
+  const identity = merchant
+    ? `merchant:${merchant}`
+    : sourceIdentity
+      ? `source:${sourceIdentity}`
+      : null;
+
+  if (!identity || typeof envelope.currency !== "string") return null;
+
+  const purchasedAtMs = Date.parse(envelope.purchased_at);
+  if (!Number.isFinite(purchasedAtMs)) return null;
+
+  const purchasedAtMinute = new Date(
+    Math.floor(purchasedAtMs / 60_000) * 60_000,
+  ).toISOString();
+
+  const projection = {
+    identity,
+    purchased_at_minute: purchasedAtMinute,
+    currency: envelope.currency,
+    receipt_total: Number(envelope.receipt_total).toFixed(2),
+  };
+
+  return sha256Hex(JSON.stringify(canonicalize(projection)));
+}
+
 async function readBoundedText(request, maxBytes) {
   const contentLength = request.headers.get("content-length");
   if (contentLength !== null) {
@@ -290,6 +328,7 @@ async function handleStructuredExtraction(request, env) {
 
   const canonicalPayload = JSON.stringify(canonicalize(envelope));
   const payloadSha256 = await sha256Hex(canonicalPayload);
+  const transactionFingerprint = await transactionFingerprintForEnvelope(envelope);
   const existing = await existingExtraction(env, envelope.envelope_id, payloadSha256);
   if (existing?.conflict) return json(409, { error: "idempotency_conflict", envelopeId: envelope.envelope_id });
   if (existing) {
@@ -312,8 +351,8 @@ async function handleStructuredExtraction(request, env) {
   const statements = [
     env.DB.prepare(
       `INSERT INTO receipt_extraction_envelopes
-        (envelope_id, schema_version, record_kind, source_type, source_id, evidence_id, extractor, extracted_at, payload_json, payload_sha256, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (envelope_id, schema_version, record_kind, source_type, source_id, evidence_id, extractor, extracted_at, payload_json, payload_sha256, transaction_fingerprint, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).bind(
       envelope.envelope_id,
       envelope.schema_version,
@@ -325,6 +364,7 @@ async function handleStructuredExtraction(request, env) {
       envelope.extracted_at,
       canonicalPayload,
       payloadSha256,
+      transactionFingerprint,
       createdAt,
     ),
     env.DB.prepare(
