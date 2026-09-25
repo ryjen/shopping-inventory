@@ -15,7 +15,7 @@ This repository is public and contains only:
 
 Real receipts, OCR payloads, purchase history, stock state, budget outputs, credentials, and household data must not be committed.
 
-The preferred private operating substrate is:
+The private operating substrate is:
 
 ```mermaid
 flowchart LR
@@ -25,20 +25,20 @@ flowchart LR
   Repo[Public GitHub repository] --> Fixtures[Synthetic fixtures only]
 ```
 
-- **Cloudflare D1** is the authoritative structured datastore.
+- **Cloudflare D1** is the preferred authoritative structured datastore.
 - **Cloudflare R2** stores private receipt images and large source payloads.
-- **Cloudflare Worker** is the authenticated access boundary.
+- **Cloudflare Worker** is the authenticated application/API boundary.
 - **Google Sheets** may be used as an optional export or review surface, but is not authoritative.
 - **CSV and SQLite-compatible exports** preserve portability and recovery.
 
-See [Private Data Policy](docs/security/private-data-policy.md) and [Private Receipt Storage Runbook](docs/runbooks/private-receipt-storage.md).
+See [ADR-0006](docs/decisions/ADR-0006-public-code-private-cloudflare-substrate.md), [Private Data Policy](docs/security/private-data-policy.md), and [Private Receipt Storage Runbook](docs/runbooks/private-receipt-storage.md).
 
 ## Product principles
 
 - Personal usefulness beats generality.
 - Raw extraction is evidence, not truth.
 - AI may propose changes but must not silently mutate authoritative state.
-- Purchases are the authoritative ledger.
+- Purchases are the authoritative acquisition ledger.
 - Stock is derived and probabilistic.
 - Ambiguous records route to review.
 - Recommendations explain their rationale.
@@ -50,7 +50,7 @@ See [Private Data Policy](docs/security/private-data-policy.md) and [Private Rec
 flowchart TD
   Evidence[Private receipt/order evidence] --> Extract[Extraction]
   Extract --> Raw[Raw imports]
-  Raw --> Normalize[Normalization and review]
+  Raw --> Normalize[Normalization + review]
   Normalize --> Purchases[Authoritative purchases]
   Purchases --> Stock[Derived stock]
   Purchases --> Budget[Budget export]
@@ -60,37 +60,35 @@ flowchart TD
 
 ## Current implementation
 
-The repository currently includes:
+The repository includes:
 
-- n8n ingestion workflows and layered validation tests;
-- a Cloudflare Worker storage boundary;
-- a D1 migration for receipt evidence metadata and audit events;
-- private R2 receipt upload and retrieval paths;
-- compensating cleanup when D1 persistence fails;
-- versioned JSON Schema contracts for the receipt-to-purchase path with executable validation;
-- repository-wide privacy validation and agent pre-write guardrails;
-- synthetic Cloudflare and canonical-contract tests;
-- privacy-focused Git ignore rules and contribution checks.
+- repository-wide privacy validation and pre-write agent guardrails;
+- authenticated Cloudflare Worker receipt evidence and structured staging endpoints;
+- private R2 receipt upload/retrieval with opaque keys;
+- D1 migrations for evidence, structured raw staging, audit metadata, purchase candidates, and immutable authoritative purchases;
+- versioned JSON Schema contracts for receipt → purchase plus derived stock/budget/recommendation outputs;
+- database-enforced item-only/approved-only promotion, source-candidate idempotency, and purchase supersession/immutability;
+- a deterministic synthetic vertical slice through review, purchase, stock, budget, and explained shopping recommendation;
+- layered n8n, Cloudflare, schema, D1, privacy, and vertical-slice CI coverage.
 
-The current milestone is **privacy and schema stabilization**:
+The active milestone is **provenance and operational hardening**:
 
-1. keep all personal data private;
-2. audit and remediate existing receipt-derived repository history;
-3. finalize versioned canonical contracts;
-4. prove one synthetic receipt through the complete vertical slice;
-5. add automated schema and privacy validation.
+1. complete append-only review/audit-event semantics;
+2. define cross-ingestion duplicate and reprocessing policy;
+3. finish remaining repository validation and evaluation coverage;
+4. provision/operate the private Cloudflare environment with retention and recovery controls.
 
 ## Repository layout
 
 ```text
 .github/                 Pull request and CI configuration
-automation/n8n/          Conservative ingestion workflows
-docs/                    Architecture, policies, schemas, and runbooks
+automation/n8n/          Conservative external orchestration
+docs/                    Architecture, policies, schemas, decisions, and runbooks
 evaluation/              Synthetic regression fixtures
 migrations/              D1/SQLite-compatible migrations
 schemas/                 Versioned machine-readable contracts
-src/                     Cloudflare Worker implementation
-test/                    Unit, integration, contract, and simulation tests
+src/                     Worker and deterministic domain implementation
+test/                    Unit, integration, contract, D1, and simulation tests
 ```
 
 ## Development
@@ -100,11 +98,12 @@ Requirements:
 - Node.js 20 or newer
 - npm
 
-Install dependencies and run tests:
+Install dependencies and run the main checks:
 
 ```bash
 npm install
 npm test
+npm run privacy:check
 npm run test:contracts
 npm run test:cloudflare
 npm run test:n8n:unit
@@ -112,11 +111,7 @@ npm run test:n8n:integration
 npm run test:n8n:e2e
 ```
 
-Run the repository privacy gate locally:
-
-```bash
-npm run privacy:check
-```
+Additional D1 and vertical-slice commands are defined in `package.json` and enforced by CI.
 
 Run the Worker locally with synthetic data:
 
@@ -131,6 +126,8 @@ Production credentials and Cloudflare resource identifiers must remain outside t
 
 ### Privacy and architecture
 
+- [Architecture](docs/architecture.md)
+- [ADR-0006: private Cloudflare operating substrate](docs/decisions/ADR-0006-public-code-private-cloudflare-substrate.md)
 - [Private Data Policy](docs/security/private-data-policy.md)
 - [Threat model and privacy considerations](docs/security/threat-model-and-privacy.md)
 - [Cloudflare private storage](docs/architecture/cloudflare-private-storage.md)
@@ -138,9 +135,8 @@ Production credentials and Cloudflare resource identifiers must remain outside t
 
 ### Data contracts and behavior
 
-- [Architecture](docs/architecture.md)
 - [Canonical contracts v1](docs/schema/canonical-contracts-v1.md)
-- [Sheet schema overview](docs/schema/README.md)
+- [Sheet/export schema overview](docs/schema/README.md)
 - [Raw import schemas](docs/schema/raw-imports.md)
 - [Ledger and derived schemas](docs/schema/ledger-and-derived.md)
 - [Normalization pipeline](docs/specs/normalization-pipeline.md)
@@ -156,4 +152,4 @@ Production credentials and Cloudflare resource identifiers must remain outside t
 
 ## Status
 
-Early implementation. The private Cloudflare storage boundary exists, but production resources have not been provisioned and real personal data must not be added until the private ingestion path and operational controls are complete.
+The repository-side architecture and complete synthetic acceptance path are implemented. Production/private Cloudflare resources are not yet provisioned, so real household data must remain in approved private storage/fallbacks until #18 operational controls are complete.

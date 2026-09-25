@@ -1,175 +1,185 @@
 # Threat Model and Privacy Considerations
 
-Shopping Inventory handles household purchase data. That data can look mundane, but it can reveal sensitive patterns about health, finances, habits, diet, pets, location, family composition, and routines.
+Shopping Inventory handles household purchase data. Receipt and purchase history can expose location, routines, spending, diet, health-adjacent purchases, pets, household composition, and other sensitive patterns.
 
 ## Scope
 
-This threat model covers the spreadsheet-first MVP and near-term integrations:
+This threat model covers:
 
-- receipt photo ingestion
-- OCR / AI extraction
-- Google Sheets storage
-- Gmail/order import
-- deal/flyer import
-- shopping/meal recommendations
-- budget export
-- future Apps Script or n8n automation
+- receipt image/PDF ingestion;
+- AI/OCR extraction;
+- authenticated Worker APIs;
+- Cloudflare D1 and R2;
+- review and authoritative purchase promotion;
+- n8n/Gmail/ecommerce integrations;
+- derived stock, budget, and recommendation outputs;
+- optional Google Sheets/CSV exports;
+- the public GitHub repository and CI pipeline.
 
 ## Assets
 
 | Asset | Sensitivity | Notes |
 | --- | --- | --- |
-| Receipt images | High | May contain card fragments, store locations, timestamps, pharmacy items |
-| Raw OCR text | High | Preserves all source evidence, including sensitive lines |
-| Email/order imports | High | May expose addresses, order IDs, full purchase history |
-| Purchases ledger | High | Authoritative household consumption/spend history |
-| Stock estimates | Medium | Derived but reveals habits and routines |
+| Receipt/order evidence | High | Can contain identifiers, store/time/location, pharmacy/payment data |
+| Raw extraction payloads | High | Preserves source-derived private detail |
+| Purchase ledger | High | Authoritative household acquisition/spend history |
+| Review/audit history | High | Links people/automation to sensitive decisions |
+| Stock estimates | Medium/High | Derived but reveals habits and household state |
 | Budget exports | High | Financial behavior and spending categories |
-| Alias table | Medium | Can reveal household staples and sensitive product classes |
-| Recommendations | Medium/High | Can expose inferred needs, health, diet, or household patterns |
+| Recommendations | Medium/High | Can expose inferred needs and sensitive categories |
+| Credentials/resource IDs | High | Can grant access to the private operating substrate |
 
 ## Trust boundaries
 
 ```mermaid
 flowchart TD
-  User[User] --> AI[AI extraction / ChatGPT]
-  User --> Gmail[Gmail]
-  Gmail --> Workflow[n8n / Apps Script]
-  AI --> Sheets[Google Sheets]
-  Workflow --> Sheets
-  Sheets --> Reports[Reports / Recommendations]
-  Sheets --> Budget[Budget spreadsheet]
+  User[User / client]
+  AI[AI / OCR service]
+  Gmail[Gmail / ecommerce]
+  N8N[n8n]
+  Worker[Authenticated Worker]
+  R2[(Private R2)]
+  D1[(Private D1)]
+  Derived[Derived outputs]
+  Sheets[Optional Sheets / CSV]
+  Git[Public GitHub + CI]
 
-  subgraph ExternalServices[External services]
-    AI
-    Gmail
-  end
+  User --> Worker
+  User --> AI
+  AI --> Worker
+  Gmail --> N8N
+  N8N --> Worker
+  Worker --> R2
+  Worker --> D1
+  D1 --> Derived
+  Derived --> Sheets
 
-  subgraph ControlledData[Controlled data surfaces]
-    Sheets
-    Reports
-    Budget
-  end
+  Git -. code/schemas/synthetic only .-> Worker
 ```
 
-## Primary threats
+Boundary rules:
 
-### 1. Sensitive purchase inference
+- the public repository is never a data-ingestion destination;
+- the Worker is the supported client boundary for private D1/R2;
+- raw/AI output cannot directly mutate authoritative purchases or Stock;
+- Sheets/CSV are optional exports, not authoritative storage;
+- external integrations receive only the minimum private context needed for their task.
 
-Purchase history can imply health conditions, financial stress, dietary choices, religious/cultural practices, household composition, or personal routines.
+## Primary threats and controls
 
-Mitigations:
+### 1. Public-data leakage through Git or CI
 
-- classify pharmacy/health-adjacent categories as sensitive
-- avoid casual recommendations based on sensitive categories
-- require explicit enablement for health/nutrition inference
-- support category-level redaction from reports
+Failure mode: a user, agent, automation, or test places real receipt/order data into a branch, PR, issue, artifact, or log.
 
-### 2. Raw evidence leakage
+Controls:
 
-Receipt images and email imports may contain more data than needed.
+- pre-write agent rule in `AGENTS.md`;
+- complete tracked-tree privacy scanning on every PR/push;
+- content-based receipt detection independent of path;
+- fail-closed handling for unscannable tracked files;
+- synthetic fixtures require explicit synthetic treatment;
+- scanner diagnostics report path/policy class rather than matched payload.
 
-Mitigations:
+Residual risk: Git history rewriting cannot retract already copied data from clones, caches, screenshots, or forks.
 
-- store source references only when needed
-- avoid copying full email bodies into Sheets when line items suffice
-- redact payment card fragments where possible
-- avoid sharing raw tabs with household members by default
+### 2. Unauthorized private-storage access
 
-### 3. AI hallucination or silent mutation
+Failure mode: direct or unauthenticated access to receipt evidence or structured household data.
 
-AI can misread receipts, invent quantities, merge lines, or normalize incorrectly.
+Controls:
 
-Mitigations:
+- Worker authentication before request processing;
+- private R2 access through the Worker;
+- opaque evidence/object identifiers;
+- no production credentials/resource IDs in public Git;
+- private/no-store evidence responses;
+- evaluate stronger scoped/short-lived client authorization before multi-client use.
 
-- raw imports are append-only evidence
-- AI output is not authoritative
-- low-confidence rows go to review
-- derived stock is recomputable
-- every recommendation includes rationale
+### 3. AI hallucination or silent authority escalation
 
-### 4. Over-permissioned integrations
+Failure mode: extraction/normalization invents fields or silently mutates authoritative state.
 
-Gmail, Sheets, Apps Script, and n8n workflows can easily request broader permissions than necessary.
+Controls:
 
-Mitigations:
+- versioned schema validation;
+- evidence/candidate/purchase contract separation;
+- explicit review before promotion;
+- item-only and approved-only D1 provenance constraints;
+- immutable authoritative purchases corrected through supersession;
+- derived state remains recomputable.
 
-- prefer least-privilege OAuth scopes
-- isolate automation accounts where practical
-- restrict workflows to receipt/order labels or search queries
-- avoid blanket mailbox ingestion
-- log automation writes
+### 4. Duplicate/reprocessing corruption
 
-### 5. Household privacy conflicts
+Failure mode: retries or multiple evidence sources create duplicate authoritative purchases.
 
-Shared households can have different visibility expectations.
+Current controls:
 
-Mitigations:
+- same envelope ID + same canonical payload is idempotent;
+- conflicting envelope reuse is rejected;
+- one candidate cannot produce multiple purchases.
 
-- add household/member scope before multi-user features
-- default sensitive categories to private
-- separate personal purchases from shared household staples
-- avoid exposing raw evidence to all members
+Remaining risk: distinct evidence records for the same real transaction require the conservative duplicate/review policy tracked by #13.
 
-### 6. Budget data coupling
+### 5. Review/audit repudiation
 
-Budget exports may link purchase details to financial planning data.
+Failure mode: mutable review state changes without durable actor/reason evidence.
 
-Mitigations:
+Current controls:
 
-- export category rollups, not raw purchase lines, by default
-- document mapping rules
-- allow exclusion of sensitive categories
-- retain source filters in export notes
+- immutable evidence and purchases;
+- payload-minimal audit infrastructure.
 
-### 7. Workflow compromise
+Remaining work: #14 defines append-only approval/rejection/override/correction events and projection semantics.
 
-n8n or Apps Script credentials could be abused to read/write sensitive data.
+### 6. Over-permissioned integrations
 
-Mitigations:
+Failure mode: Gmail, n8n, or other external systems receive more access/data than required.
 
-- keep workflow credentials scoped
-- avoid embedding secrets in repo or sheets
-- rotate credentials if exposed
-- prefer manual approval for destructive workflows
-- keep audit columns on automated writes
+Controls:
+
+- least-privilege OAuth/scopes;
+- bounded searches/labels rather than whole-mailbox ingestion;
+- credentials outside Git;
+- orchestration cannot bypass canonical review/authority boundaries;
+- private payloads must not be copied into logs or public artifacts.
+
+### 7. Sensitive inference and derived-data leakage
+
+Failure mode: recommendations, nutrition, budget, or household views reveal more than the user intended.
+
+Controls:
+
+- derived outputs use authoritative/derived evidence, not raw payloads directly;
+- minimize fields on export;
+- sensitive categories require explicit product policy before broad inference;
+- no autonomous purchasing;
+- derived state should be short-lived/recomputable where possible.
+
+### 8. Lifecycle and recovery failure
+
+Failure mode: private evidence cannot be deleted/restored, or backups/exports create unmanaged copies.
+
+Controls and remaining work:
+
+- opaque object references and versioned migrations already exist;
+- #18 owns production retention/deletion, deterministic export/restore, credential rotation, and quota/cost operations.
 
 ## Privacy principles
 
-- Minimize raw data copied into durable storage
-- Separate raw evidence from authoritative ledgers
-- Prefer coarse derived states over invasive precision
-- Require review for sensitive or low-confidence inferences
-- Make automated actions explainable and reversible
-- Do not infer health, nutrition, or personal behavior beyond the explicit user goal
-
-## Data retention guidance
-
-| Data | Suggested retention |
-| --- | --- |
-| Receipt images | Short-lived unless needed for audit |
-| Raw OCR rows | Retain while useful for replay/debugging |
-| Purchases ledger | Long-lived authoritative history |
-| Stock estimates | Regenerate; no long-term retention required |
-| Recommendations | Short-lived reports unless explicitly archived |
-| Budget exports | Retain according to budget workflow needs |
-
-## Security checklist before Gmail/order ingestion
-
-- [ ] Define Gmail search scope or label strategy
-- [ ] Avoid reading unrelated emails
-- [ ] Define what email fields are stored
-- [ ] Redact unnecessary personal/order metadata
-- [ ] Add review queue for uncertain imports
-- [ ] Log workflow writes with extractor/workflow identity
-- [ ] Document credential storage and rotation
-- [ ] Confirm household visibility policy
+- Minimize raw durable data.
+- Separate evidence, proposed interpretation, authoritative facts, and derived views.
+- Prefer uncertainty to false precision.
+- Require explicit review at authority transitions.
+- Keep automation explainable and reversible.
+- Do not infer health/nutrition/behavior beyond the explicit product goal.
+- Never use public Git as a queue, cache, backup, or temporary private-data store.
 
 ## Safe defaults
 
-- Manual receipt ingestion first
-- Category rollups for budget exports
-- Sensitive categories excluded from casual recommendations
-- No autonomous purchasing
-- No destructive edits to raw evidence
-- No direct Stock mutation from OCR/AI output
+- authenticated private ingestion;
+- synthetic repository/CI data only;
+- ambiguous records remain review-only;
+- no destructive evidence edits;
+- no direct Stock mutation from OCR/AI;
+- no autonomous purchasing;
+- optional exports contain the minimum necessary private detail.

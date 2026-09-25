@@ -1,134 +1,105 @@
 # Next Steps
 
-This plan turns the documentation-first architecture into a usable MVP path without prematurely building a full app.
+The repository has completed the initial privacy/schema foundation and the synthetic end-to-end acceptance path. The active work is now hardening provenance, duplicate handling, validation, and the private operational environment before broad product expansion.
 
-## Phase 1: Finalize sheet substrate
+## Completed foundation
 
-Goals:
+Merged repository work now provides:
 
-- stabilize canonical tab names
-- finalize required columns and enums
-- define validation rules
-- identify which columns are user-edited versus generated
+- public-code/private-data enforcement and incident remediation;
+- authenticated Worker + private R2 evidence storage;
+- structured D1 receipt-extraction staging;
+- executable JSON Schema contracts for receipt → purchase;
+- D1/SQLite candidate and immutable-purchase invariants;
+- deterministic synthetic receipt → review → purchase → stock → budget → recommendation acceptance coverage.
 
-Tasks:
+These are no longer planning tasks.
 
-- review `docs/schema/README.md`
-- review `docs/schema/raw-imports.md`
-- review `docs/schema/ledger-and-derived.md`
-- decide whether any additional tabs are needed before creating a template
-- document schema versioning conventions
+## Repository hardening track
 
-Exit criteria:
+### 1. Append-only review/audit semantics — #14
 
-- sheet schema is stable enough to create a template
-- raw/import/ledger/derived ownership is clear
+Outcome:
 
-## Phase 2: Create sheet template and fixtures
-
-Goals:
-
-- make the MVP concrete and repeatable
-- provide sample data without using private receipts
-
-Tasks:
-
-- create a Google Sheet template or CSV fixture set
-- add synthetic receipt/order examples
-- add expected normalized purchase outputs
-- add expected review queue outputs
-- add alias examples for common grocery/household items
+- approval, rejection, override, and correction decisions are attributable and append-only;
+- mutable review-state projections cannot silently diverge from permitted event history;
+- audit metadata remains payload-minimal.
 
 Exit criteria:
 
-- a new user can create the sheet structure
-- sample rows can move through the documented workflow
+- synthetic transition tests cover valid and invalid review paths;
+- authoritative evidence remains immutable;
+- review/correction actions have durable actor and provenance evidence.
 
-## Phase 3: Manual receipt ingestion runbook
+### 2. Cross-ingestion duplicate/reprocessing policy — #13
 
-Goals:
+Outcome:
 
-- define the first usable operating workflow
-- keep AI extraction bounded and reviewable
-
-Tasks:
-
-- use the receipt ingestion prompt contract
-- append extracted rows to `Import_Raw`
-- normalize rows into `Review_Queue` or `Purchases`
-- recompute stock estimates
-- generate a simple shopping/budget report
+- retries remain idempotent;
+- distinct evidence representing the same transaction is detected or routed to review;
+- legitimate similar purchases are not silently collapsed;
+- normalization-rule reprocessing has defined authoritative behavior.
 
 Exit criteria:
 
-- one receipt can be processed end-to-end manually
-- errors and ambiguities are captured rather than hidden
+- exact, near-duplicate, retry, and reprocessing fixtures are executable;
+- reviewer override is attributable.
 
-## Phase 4: Evaluation corpus
+### 3. Repository validation completion — #8
 
-Goals:
+Outcome:
 
-- prevent alias/category/regression drift
-- create a safety net before automation
-
-Tasks:
-
-- expand synthetic fixture corpus
-- define expected normalization outputs
-- add duplicate detection cases
-- add review-routing cases
-- add budget mapping cases
-- add stock decay cases
+- documentation links and remaining JSON/JSONL/CSV fixture families have deterministic validation;
+- contributors have one documented local validation entry point equivalent to required CI.
 
 Exit criteria:
 
-- changes to normalization rules can be checked against examples
-- ambiguous cases intentionally route to review
+- stale/broken docs and malformed remaining fixture formats fail CI without production credentials.
 
-## Phase 5: Lightweight automation
+### 4. Evaluation corpus expansion — #4
 
-Goals:
+Outcome:
 
-- automate only after the manual workflow is clear
-- keep automation explainable and reversible
-
-Candidate tasks:
-
-- Apps Script validation helper
-- Apps Script promote-reviewed-row helper
-- Apps Script stock recomputation helper
-- n8n Gmail/order ingestion spike
-- Markdown report generator
+- synthetic normalization, classification, duplicate, review-routing, stock-decay, and budget cases cover the important failure modes discovered by the vertical slice.
 
 Exit criteria:
 
-- automation writes are idempotent
-- automation preserves provenance
-- low-confidence cases route to review
+- corpus changes have expected outputs;
+- ambiguous cases intentionally remain reviewable rather than silently canonicalized.
 
-## Phase 6: Provider evaluation spike
+## Operational private-environment track
 
-Goals:
+### Provision and operate private D1/R2 — #18
 
-- evaluate backend providers only if Sheets becomes limiting
-- keep provider choice requirements-driven
+This work can proceed independently where private Cloudflare credentials/resources are available.
 
-Candidate paths:
+Outcome:
 
-- SQLite-compatible local schema
-- PocketBase prototype for API/admin/files
-- hosted Postgres-compatible option if hosted access becomes necessary
+- isolated private development/production D1 and R2 resources;
+- deployed authenticated Worker;
+- one real receipt can traverse the private path without Git/Sheets/public intermediates;
+- retention/deletion, export/restore, credential rotation, quota/cost controls are documented and tested.
 
-Exit criteria:
+Repository CI must remain synthetic and credential-free.
 
-- provider choice is based on demonstrated project needs
-- data remains portable
-- Sheets can remain a review/reporting surface if useful
+## Product expansion after hardening
+
+The following remain downstream:
+
+- #23 Gmail/ecommerce receipt ingestion;
+- #24 explained shopping/deal recommendations;
+- #25 meal-planning/nutrition-aware suggestions;
+- #26 external budget spreadsheet export.
+
+They must consume the canonical/private substrate rather than introduce parallel truth stores.
 
 ## Current priority
 
-1. Finalize sheet schemas
-2. Create fixture skeletons
-3. Run one manual receipt ingestion flow
-4. Expand evaluation corpus
-5. Add lightweight validation automation only after workflow is proven
+For repository-only work:
+
+1. #14 review/audit event semantics
+2. #13 duplicate/reprocessing policy
+3. #8 validation completion
+4. #4 evaluation corpus expansion
+
+For private operations, #18 may proceed in parallel when the private Cloudflare environment is available.
