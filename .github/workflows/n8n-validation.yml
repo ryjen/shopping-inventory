@@ -52,6 +52,9 @@ jobs:
       - name: Exercise review and audit D1 invariants
         run: npm run test:d1:review-audit
 
+      - name: Exercise duplicate and reprocessing D1 invariants
+        run: npm run test:d1:duplicates
+
   n8n-cli-import-smoke-test:
     name: n8n CLI import smoke test
     runs-on: ubuntu-latest
