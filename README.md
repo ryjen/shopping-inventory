@@ -98,20 +98,14 @@ Requirements:
 - Node.js 20 or newer
 - npm
 
-Install dependencies and run the main checks:
+Install dependencies and run the same repository validation used by the main CI job:
 
 ```bash
 npm install
-npm test
-npm run privacy:check
-npm run test:contracts
-npm run test:cloudflare
-npm run test:n8n:unit
-npm run test:n8n:integration
-npm run test:n8n:e2e
+npm run validate
 ```
 
-Additional D1 and vertical-slice commands are defined in `package.json` and enforced by CI.
+Focused test commands remain available in `package.json` for local iteration. `npm test` runs every JavaScript test in `test/*.test.mjs`, including the synthetic vertical slice.
 
 Run the Worker locally with synthetic data:
 
