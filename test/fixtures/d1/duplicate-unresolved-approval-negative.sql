@@ -2,13 +2,13 @@ INSERT INTO receipt_extraction_envelopes
   (envelope_id, schema_version, record_kind, source_type, source_id, extractor, extracted_at, payload_json, payload_sha256, transaction_fingerprint, created_at)
 VALUES
   ('env_syn_dup_unresolved_a', '1.0.0', 'receipt_extraction_envelope', 'synthetic', 'src_dup_unresolved_a', 'duplicate-policy-test',
-   '2026-01-18T18:00:00Z', '{"synthetic":true}', 'sha256-env_syn_dup_unresolved_a', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', '2026-01-18T18:00:01Z');
+   '2026-01-18T18:00:00Z', '{"synthetic":true}', 'sha256-env_syn_dup_unresolved_a', 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc', '2026-01-18T18:00:01Z');
 
 INSERT INTO receipt_extraction_envelopes
   (envelope_id, schema_version, record_kind, source_type, source_id, extractor, extracted_at, payload_json, payload_sha256, transaction_fingerprint, created_at)
 VALUES
   ('env_syn_dup_unresolved_b', '1.0.0', 'receipt_extraction_envelope', 'synthetic', 'src_dup_unresolved_b', 'duplicate-policy-test',
-   '2026-01-18T18:00:00Z', '{"synthetic":true}', 'sha256-env_syn_dup_unresolved_b', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', '2026-01-18T18:00:01Z');
+   '2026-01-18T18:00:00Z', '{"synthetic":true}', 'sha256-env_syn_dup_unresolved_b', 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc', '2026-01-18T18:00:01Z');
 
 INSERT INTO import_raw_rows
   (import_id, envelope_id, schema_version, record_kind, line_id, source_type, source_id, line_number, line_type, raw_text, quantity, unit, extended_price, parse_confidence, review_state, created_at)
