@@ -23,6 +23,7 @@ function statefulStructuredDb({ evidenceIds = [] } = {}) {
   const evidence = new Set(evidenceIds);
   const state = {
     envelope: null,
+    envelopes: [],
     imports: [],
     batches: [],
   };
@@ -34,9 +35,22 @@ function statefulStructuredDb({ evidenceIds = [] } = {}) {
         bind(...args) {
           return statement(sql, args, {
             first: async () => {
-              if (sql.includes("SELECT payload_sha256 FROM receipt_extraction_envelopes")) {
-                if (!state.envelope || state.envelope.envelope_id !== args[0]) return null;
-                return { payload_sha256: state.envelope.payload_sha256 };
+              if (sql.includes("SELECT payload_sha256, duplicate_state, duplicate_of_envelope_id FROM receipt_extraction_envelopes")) {
+                const envelope = state.envelopes.find((item) => item.envelope_id === args[0]);
+                if (!envelope) return null;
+                return {
+                  payload_sha256: envelope.payload_sha256,
+                  duplicate_state: envelope.duplicate_state,
+                  duplicate_of_envelope_id: envelope.duplicate_of_envelope_id,
+                };
+              }
+              if (sql.includes("WHERE transaction_fingerprint = ?")) {
+                const envelope = state.envelopes.find((item) =>
+                  item.transaction_fingerprint === args[0] &&
+                  item.envelope_id !== args[1] &&
+                  (item.duplicate_state === "clear" || item.duplicate_state === "distinct")
+                );
+                return envelope ? { envelope_id: envelope.envelope_id } : null;
               }
               if (sql.includes("SELECT evidence_id FROM receipt_evidence")) {
                 return evidence.has(args[0]) ? { evidence_id: args[0] } : null;
@@ -63,7 +77,11 @@ function statefulStructuredDb({ evidenceIds = [] } = {}) {
         state.envelope = {
           envelope_id: envelopeInsert.args[0],
           payload_sha256: envelopeInsert.args[9],
+          transaction_fingerprint: envelopeInsert.args[10],
+          duplicate_state: envelopeInsert.args[11],
+          duplicate_of_envelope_id: envelopeInsert.args[12],
         };
+        state.envelopes.push(state.envelope);
       }
 
       const rawInsert = statements.find((item) => item.sql.includes("INSERT INTO import_raw_rows"));
@@ -235,10 +253,62 @@ test("structured intake atomically stages envelope, raw rows, and payload-free a
   assert.doesNotMatch(sql, /budget/);
 
   const audit = db.state.batches[0].find((item) => item.sql.includes("INSERT INTO audit_events"));
-  const auditMetadata = JSON.parse(audit.args[3]);
+  const auditMetadata = JSON.parse(audit.args[4]);
   assert.deepEqual(Object.keys(auditMetadata).sort(), ["line_count", "schema_version", "source_type"]);
   assert.equal("merchant_raw" in auditMetadata, false);
   assert.equal("raw_text" in auditMetadata, false);
+});
+
+test("structured intake flags same-fingerprint distinct envelopes for duplicate review", async () => {
+  const db = statefulStructuredDb();
+  const first = await worker.fetch(extractionRequest(canonicalFixture.envelope), env({ DB: db }));
+  assert.equal(first.status, 201);
+
+  const secondEnvelope = {
+    ...canonicalFixture.envelope,
+    envelope_id: "env_syn_duplicate_review",
+    source: { ...canonicalFixture.envelope.source, source_id: "src_syn_duplicate_review" },
+    merchant_raw: `  ${canonicalFixture.envelope.merchant_raw.toUpperCase()}   `,
+    purchased_at: canonicalFixture.envelope.purchased_at.replace(/:\d{2}(?=Z|[+-])/i, ":30"),
+  };
+  const second = await worker.fetch(extractionRequest(secondEnvelope), env({ DB: db }));
+  const body = await second.json();
+
+  assert.equal(second.status, 201);
+  assert.equal(body.idempotent, false);
+  assert.equal(body.duplicateReviewRequired, true);
+  assert.equal(body.duplicateOfEnvelopeId, canonicalFixture.envelope.envelope_id);
+  assert.equal(db.state.envelopes.length, 2);
+  assert.equal(db.state.envelopes[1].duplicate_state, "needs_review");
+  assert.equal(db.state.envelopes[1].duplicate_of_envelope_id, canonicalFixture.envelope.envelope_id);
+  assert.equal(db.state.envelopes[0].transaction_fingerprint, db.state.envelopes[1].transaction_fingerprint);
+
+  const audit = db.state.batches[1].find((item) => item.sql.includes("INSERT INTO audit_events"));
+  assert.equal(audit.args[1], "receipt_extraction_duplicate_flagged");
+  const metadata = JSON.parse(audit.args[4]);
+  assert.equal(metadata.duplicate_review_required, true);
+  assert.equal(metadata.duplicate_of_envelope_id, canonicalFixture.envelope.envelope_id);
+  assert.equal("merchant_raw" in metadata, false);
+});
+
+test("structured intake does not flag a different transaction total", async () => {
+  const db = statefulStructuredDb();
+  const first = await worker.fetch(extractionRequest(canonicalFixture.envelope), env({ DB: db }));
+  assert.equal(first.status, 201);
+
+  const distinct = {
+    ...canonicalFixture.envelope,
+    envelope_id: "env_syn_distinct_total",
+    source: { ...canonicalFixture.envelope.source, source_id: "src_syn_distinct_total" },
+    receipt_total: canonicalFixture.envelope.receipt_total + 0.01,
+  };
+  const response = await worker.fetch(extractionRequest(distinct), env({ DB: db }));
+  const body = await response.json();
+
+  assert.equal(response.status, 201);
+  assert.equal(body.duplicateReviewRequired, undefined);
+  assert.equal(db.state.envelopes[1].duplicate_state, "clear");
+  assert.notEqual(db.state.envelopes[0].transaction_fingerprint, db.state.envelopes[1].transaction_fingerprint);
 });
 
 test("structured intake is idempotent for the same envelope payload", async () => {
@@ -286,6 +356,144 @@ test("structured intake requires referenced receipt evidence to exist", async ()
   assert.equal(db.state.batches.length, 0);
 });
 
+test("exact receipt evidence duplicate returns existing opaque ids before R2 write", async () => {
+  let puts = 0;
+  const lookups = [];
+  const audits = [];
+  const db = {
+    prepare(sql) {
+      return {
+        bind(...args) {
+          if (sql.includes("FROM receipt_evidence") && sql.includes("source_sha256")) {
+            lookups.push(args[0]);
+            return statement(sql, args, {
+              first: async () => ({ evidence_id: "evidence_existing", receipt_id: "receipt_existing" }),
+            });
+          }
+          if (sql.includes("INSERT INTO audit_events")) {
+            audits.push(args);
+            return statement(sql, args);
+          }
+          return statement(sql, args);
+        },
+      };
+    },
+  };
+
+  const response = await worker.fetch(
+    authorizedRequest("/v1/receipts", {
+      method: "POST",
+      headers: { "content-type": "image/jpeg" },
+      body: new Uint8Array([0xff, 0xd8, 0xff, 0x01]),
+    }),
+    env({
+      DB: db,
+      RECEIPTS: { put: async () => { puts += 1; }, get: async () => null, delete: async () => {} },
+    }),
+  );
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    receiptId: "receipt_existing",
+    evidenceId: "evidence_existing",
+    idempotent: true,
+  });
+  assert.equal(puts, 0);
+  assert.equal(lookups.length, 1);
+  assert.match(lookups[0], /^[0-9a-f]{64}$/);
+  assert.equal(audits.length, 1);
+  assert.deepEqual(JSON.parse(audits[0][3]), { exact_source_hash_match: true });
+});
+
+test("new receipt evidence persists its source digest", async () => {
+  let evidenceInsertArgs;
+  let puts = 0;
+  const db = {
+    prepare(sql) {
+      return {
+        bind(...args) {
+          if (sql.includes("FROM receipt_evidence") && sql.includes("source_sha256")) {
+            return statement(sql, args, { first: async () => null });
+          }
+          if (sql.includes("INSERT INTO receipt_evidence")) evidenceInsertArgs = args;
+          return statement(sql, args);
+        },
+      };
+    },
+  };
+
+  const response = await worker.fetch(
+    authorizedRequest("/v1/receipts", {
+      method: "POST",
+      headers: { "content-type": "image/jpeg" },
+      body: new Uint8Array([0xff, 0xd8, 0xff, 0x02]),
+    }),
+    env({
+      DB: db,
+      RECEIPTS: { put: async () => { puts += 1; }, get: async () => null, delete: async () => {} },
+    }),
+  );
+
+  const body = await response.json();
+  assert.equal(response.status, 201);
+  assert.equal(body.idempotent, false);
+  assert.equal(puts, 1);
+  assert.ok(evidenceInsertArgs);
+  assert.match(evidenceInsertArgs[5], /^[0-9a-f]{64}$/);
+});
+
+test("concurrent exact receipt upload cleans its R2 object and returns the winning evidence", async () => {
+  let lookupCount = 0;
+  const events = [];
+  const db = {
+    prepare(sql) {
+      return {
+        bind(...args) {
+          if (sql.includes("FROM receipt_evidence") && sql.includes("source_sha256")) {
+            lookupCount += 1;
+            return statement(sql, args, {
+              first: async () => lookupCount === 1
+                ? null
+                : { evidence_id: "evidence_race_winner", receipt_id: "receipt_race_winner" },
+            });
+          }
+          if (sql.includes("INSERT INTO receipt_evidence")) {
+            return statement(sql, args, { run: async () => { throw new Error("unique race"); } });
+          }
+          if (sql.includes("INSERT INTO audit_events")) return statement(sql, args);
+          return statement(sql, args);
+        },
+      };
+    },
+  };
+
+  const response = await worker.fetch(
+    authorizedRequest("/v1/receipts", {
+      method: "POST",
+      headers: { "content-type": "image/jpeg" },
+      body: new Uint8Array([0xff, 0xd8, 0xff, 0x03]),
+    }),
+    env({
+      DB: db,
+      RECEIPTS: {
+        put: async (key) => events.push(["put", key]),
+        delete: async (key) => events.push(["delete", key]),
+        get: async () => null,
+      },
+    }),
+  );
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    receiptId: "receipt_race_winner",
+    evidenceId: "evidence_race_winner",
+    idempotent: true,
+  });
+  assert.equal(events.length, 2);
+  assert.equal(events[0][0], "put");
+  assert.deepEqual(events[1], ["delete", events[0][1]]);
+});
+
 test("rejects unsupported upload types before writing", async () => {
   let writes = 0;
   const response = await worker.fetch(
@@ -327,8 +535,14 @@ test("removes the R2 object when D1 metadata persistence fails", async () => {
         get: async () => null,
       },
       DB: {
-        prepare: () => ({
-          bind: () => ({ run: async () => { throw new Error("D1 unavailable"); } }),
+        prepare: (sql) => ({
+          bind: (...args) => statement(sql, args, {
+            first: async () => null,
+            run: async () => {
+              if (sql.includes("INSERT INTO receipt_evidence")) throw new Error("D1 unavailable");
+              return { success: true };
+            },
+          }),
         }),
       },
     }),
