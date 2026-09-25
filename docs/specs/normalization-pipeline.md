@@ -1,184 +1,158 @@
 # Normalization Pipeline Specification
 
-The normalization pipeline turns raw evidence into reviewed, authoritative purchase rows without allowing AI/OCR output to silently mutate inventory truth.
+The normalization pipeline turns private raw evidence into reviewed, authoritative acquisition records without allowing AI/OCR output to silently mutate household truth.
+
+## Authority model
+
+The canonical path is:
+
+```mermaid
+flowchart LR
+  E[ReceiptExtractionEnvelope]
+  R[ImportRawRow]
+  C[PurchaseCandidate]
+  Rev[Review event]
+  P[Purchase]
+  D[Derived stock / budget / recommendations]
+
+  E --> R
+  R --> C
+  C --> Rev
+  Rev -->|approved| P
+  P --> D
+```
+
+Cloudflare D1 is the preferred authoritative structured datastore. Google Sheets/CSV may expose optional review or export views, but they are not the normalization source of truth.
 
 ## Goals
 
-- Preserve raw evidence unchanged
-- Normalize messy receipt/order lines into canonical purchase records
-- Route uncertain cases to review
-- Produce deterministic enough outputs to test and replay
-- Maintain provenance from purchase rows back to raw imports
+- preserve extraction/raw evidence unchanged;
+- produce deterministic candidate interpretations;
+- route ambiguity, duplicate risk, and policy-sensitive cases to review;
+- maintain provenance from Purchase back to candidate/raw/evidence;
+- make promotion idempotent and auditable;
+- keep derived inventory/reporting state recomputable.
 
 ## Non-goals
 
-- Exact current inventory truth
-- Exact nutrition tracking
-- Fully autonomous destructive mutation
-- Perfect receipt parsing across all merchants
+- exact current inventory truth;
+- exact nutrition tracking;
+- autonomous destructive mutation;
+- perfect parsing across every merchant/source;
+- using a spreadsheet as a parallel authoritative ledger.
 
-## Pipeline stages
+## Stages
 
-```mermaid
-flowchart TD
-  A[Raw import row] --> B[Parse structure]
-  B --> C[Generate dedupe key]
-  C --> D[Alias/canonicalization]
-  D --> E[Category mapping]
-  E --> F[Quantity/unit normalization]
-  F --> G[Confidence scoring]
-  G --> H{Review required?}
-  H -->|yes| I[Review_Queue]
-  H -->|no| J[Purchases]
-  I --> K[Human/assisted review]
-  K --> J
-  J --> L[Stock recomputation]
-  J --> M[Budget export]
-```
+### 1. Validate and stage evidence
 
-## Stage details
+Input is a versioned `ReceiptExtractionEnvelope` or a future source-specific envelope that maps into the same private staging boundary.
 
-### 1. Parse structure
+The Worker validates the contract and persists immutable evidence/raw rows in private D1/R2. Invalid or oversized input fails before authoritative state is touched.
 
-Input: one `Import_Raw` or `Orders_Raw` row.
+### 2. Parse and normalize one raw item line
 
-Output candidate fields:
+Only an inventory-bearing `item` line may produce a `PurchaseCandidate`.
 
-- item text
-- quantity
-- unit
-- line price
-- merchant
-- purchase/order timestamp
-- source metadata
+Candidate interpretation may include:
 
-Parsing should keep both raw and normalized values.
+- canonical item ID;
+- quantity/unit;
+- acquisition amount;
+- normalization confidence;
+- traceable source import ID.
 
-### 2. Generate dedupe key
+The raw row remains unchanged.
 
-The dedupe key should be deterministic and based on stable source evidence.
+### 3. Evaluate duplicate risk
 
-Suggested receipt dedupe input:
+Duplicate handling has two distinct levels:
 
-- merchant normalized
-- purchase date
-- receipt total when available
-- raw line hash
-- source image hash when available
+- **idempotent retry:** the same source/envelope/candidate operation must not create duplicate state;
+- **transaction identity:** distinct evidence may describe the same real purchase and must be detected or conservatively routed to review.
 
-Suggested order dedupe input:
+Stable inputs may include source/evidence hashes, provider message/order identifiers, transaction timestamps, merchant/total signals, and line fingerprints. Private source values should remain private; persisted/public diagnostics should prefer opaque IDs or hashes.
 
-- source system
-- order id
-- item text
-- price
-- ordered date
+A possible cross-source duplicate is **not silently discarded or merged**. The policy and reviewer override semantics are owned by #13.
 
-A possible duplicate should be routed to `Review_Queue`, not discarded automatically.
+### 4. Canonicalize
 
-### 3. Alias/canonicalization
+Alias/category/unit logic produces a proposed interpretation. AI/semantic matching may suggest values but does not create authoritative aliases or purchases by itself.
 
-Alias resolution maps raw item text to a canonical item ID.
+Unknown values remain unknown rather than being invented.
 
-Resolution order:
+### 5. Score confidence and risk
 
-1. exact active alias scoped to merchant
-2. exact active global alias
-3. contains/regex active alias scoped to merchant
-4. contains/regex active global alias
-5. semantic suggestion
-6. new canonical item candidate
+Signals may include:
 
-Semantic suggestions must not silently create authoritative aliases unless explicitly approved.
+- extraction/parse confidence;
+- alias/category confidence;
+- quantity confidence;
+- duplicate risk;
+- source quality;
+- policy-sensitive category flags.
 
-### 4. Category mapping
+Confidence is advisory. Any unresolved duplicate or sensitive-policy risk can force review regardless of numeric score.
 
-Categories come from, in priority order:
+### 6. Review
 
-1. reviewed alias category
-2. canonical item default category
-3. merchant/source category hint
-4. AI/category inference
-5. manual review
+A `PurchaseCandidate` starts at `needs_review`.
 
-Low-confidence or policy-sensitive categories should be reviewed.
+Approval/rejection is recorded as an append-only review event with actor attribution. D1 projects the current review state from permitted event transitions; direct state rewrites are rejected.
 
-### 5. Quantity/unit normalization
+See [Review and audit events](../schema/review-and-audit-events.md).
 
-Normalize obvious package and unit patterns, but preserve raw quantity text.
+### 7. Promote
 
-Examples:
+Only an approved candidate backed by an `item` raw row may produce an authoritative `Purchase`.
 
-- `2 x 500g` -> `quantity_value=1000`, `quantity_unit=g`, `package_count=2`
-- `1L` -> `quantity_value=1`, `quantity_unit=L`
-- `EA` -> `quantity_unit=each`
+Persistence enforces:
 
-Unknown quantities are acceptable. Do not invent precision.
+- one Purchase per source candidate;
+- approved-only promotion;
+- immutable Purchase records;
+- corrections by superseding insert rather than update;
+- actor-attributed promotion/correction audit events.
 
-### 6. Confidence scoring
+Re-running the same promotion does not create another authoritative purchase.
 
-Each promoted purchase row should carry `normalization_confidence`.
+### 8. Derive
 
-Suggested signals:
+Stock snapshots, budget exports, and shopping recommendations consume authoritative Purchases. They are recomputable outputs rather than alternate truth stores.
 
-- OCR confidence
-- parse confidence
-- alias confidence
-- category confidence
-- quantity confidence
-- duplicate risk
-- price parse confidence
+## Error/risk handling
 
-A conservative initial threshold:
-
-| Condition | Action |
+| Condition | Result |
 | --- | --- |
-| confidence >= 0.90 and no risk flags | promote |
-| confidence 0.70-0.89 | review unless alias is already approved |
-| confidence < 0.70 | review |
-| duplicate risk | review |
-| policy-sensitive item | review |
-
-## Promotion rules
-
-A row may be promoted into `Purchases` when:
-
-- source row is traceable
-- canonical item is known or explicitly accepted
-- category is known
-- review state is `reviewed` or automation threshold is satisfied
-- no unresolved duplicate risk remains
-
-Promotion should be idempotent. Re-running the pipeline against the same raw row should not create duplicate purchase rows.
-
-## Error handling
-
-| Failure | Handling |
-| --- | --- |
-| Missing price | Allow promotion with note if item identity is useful |
-| Missing quantity | Allow promotion with unknown quantity |
-| Missing merchant | Allow but lower confidence |
-| Ambiguous item | Review |
-| Duplicate candidate | Review |
-| Inconsistent receipt totals | Review |
+| Missing optional price/date detail | Preserve unknown/null semantics; review if material |
+| Ambiguous item interpretation | Keep candidate in review |
+| Non-item receipt line | Never promote as acquisition |
+| Exact retry | Idempotent response/no duplicate authoritative state |
+| Possible cross-source duplicate | Route to duplicate review under #13 |
+| Invalid review transition | Reject |
+| In-place evidence/candidate/Purchase rewrite | Reject |
+| Inconsistent transaction reconciliation | Review |
 
 ## Auditability
 
-Every purchase row should be explainable:
+An authoritative Purchase should be explainable through opaque provenance:
 
-- where it came from
-- which alias matched
-- what confidence was assigned
-- whether a human reviewed it
-- what changed during review
+- source evidence/envelope/raw row;
+- candidate interpretation;
+- review decision and actor;
+- promotion/correction audit event;
+- superseded Purchase, when applicable.
 
-## Implementation targets
+Audit metadata should not duplicate merchant, basket, raw line, price, or other private payload fields unnecessarily.
 
-This spec can be implemented by:
+## Implementation boundaries
 
-- manual ChatGPT + Google Sheets workflow
-- Apps Script functions
-- n8n workflow steps
-- future CLI/backend service
+The rules are implementation-portable, but the active operating substrate is Worker + private D1/R2.
 
-The rules should remain portable across implementations.
+Allowed supporting surfaces include:
+
+- n8n for external orchestration;
+- AI/OCR for untrusted extraction/suggestions;
+- Google Sheets/CSV for optional human review/export;
+- SQLite-compatible local validation/recovery.
+
+None of those supporting surfaces may bypass the canonical evidence → candidate → review → Purchase authority boundary.
