@@ -190,9 +190,39 @@ function canonicalize(value) {
   return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonicalize(value[key])]));
 }
 
-async function sha256Hex(text) {
-  const digest = await crypto.subtle.digest("SHA-256", encoder.encode(text));
+async function sha256HexBytes(bytes) {
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function sha256Hex(text) {
+  return sha256HexBytes(encoder.encode(text));
+}
+
+function normalizeFingerprintText(value) {
+  return value.normalize("NFKC").trim().toLowerCase().replace(/\\s+/g, " ");
+}
+
+async function transactionFingerprint(envelope) {
+  if (
+    typeof envelope.merchant_raw !== "string" ||
+    normalizeFingerprintText(envelope.merchant_raw).length === 0 ||
+    typeof envelope.purchased_at !== "string" ||
+    typeof envelope.receipt_total !== "number"
+  ) {
+    return null;
+  }
+
+  const purchasedAt = new Date(envelope.purchased_at);
+  if (!Number.isFinite(purchasedAt.getTime())) return null;
+
+  const projection = {
+    merchant: normalizeFingerprintText(envelope.merchant_raw),
+    purchased_at_minute_utc: `${purchasedAt.toISOString().slice(0, 16)}Z`,
+    currency: envelope.currency,
+    total_minor: Math.round(envelope.receipt_total * 100),
+  };
+  return sha256Hex(JSON.stringify(projection));
 }
 
 async function readBoundedText(request, maxBytes) {
@@ -229,7 +259,7 @@ async function readBoundedText(request, maxBytes) {
 
 async function existingExtraction(env, envelopeId, payloadSha256) {
   const row = await env.DB.prepare(
-    "SELECT payload_sha256 FROM receipt_extraction_envelopes WHERE envelope_id = ?",
+    "SELECT payload_sha256, duplicate_state, duplicate_of_envelope_id FROM receipt_extraction_envelopes WHERE envelope_id = ?",
   ).bind(envelopeId).first();
   if (!row) return null;
   if (row.payload_sha256 !== payloadSha256) return { conflict: true };
@@ -240,7 +270,46 @@ async function existingExtraction(env, envelopeId, payloadSha256) {
   return {
     conflict: false,
     imports: (importsResult?.results ?? []).map((item) => ({ importId: item.import_id, lineId: item.line_id })),
+    duplicateReviewRequired: row.duplicate_state === "needs_review",
+    duplicateOfEnvelopeId: row.duplicate_of_envelope_id ?? null,
   };
+}
+
+async function existingEvidenceBySha(env, sourceSha256) {
+  return env.DB.prepare(
+    `SELECT evidence_id, receipt_id
+     FROM receipt_evidence
+     WHERE source_sha256 = ? AND deleted_at IS NULL
+     LIMIT 1`,
+  ).bind(sourceSha256).first();
+}
+
+async function recordEvidenceDuplicateSeen(env, evidenceId) {
+  const occurredAt = new Date().toISOString();
+  const result = await env.DB.prepare(
+    `INSERT INTO audit_events
+      (event_id, actor_id, action, target_kind, target_id, occurred_at, metadata_json)
+     VALUES (?, 'api_token', 'receipt_evidence_duplicate_seen', 'receipt_evidence', ?, ?, ?)`,
+  ).bind(
+    crypto.randomUUID(),
+    evidenceId,
+    occurredAt,
+    JSON.stringify({ exact_source_hash_match: true }),
+  ).run();
+  if (result?.success === false) throw new Error("D1 duplicate audit insert reported failure");
+}
+
+async function existingTransactionDuplicate(env, fingerprint, envelopeId) {
+  if (!fingerprint) return null;
+  return env.DB.prepare(
+    `SELECT envelope_id
+     FROM receipt_extraction_envelopes
+     WHERE transaction_fingerprint = ?
+       AND envelope_id <> ?
+       AND duplicate_state IN ('clear', 'distinct')
+     ORDER BY created_at
+     LIMIT 1`,
+  ).bind(fingerprint, envelopeId).first();
 }
 
 function rawRowsJson(importRows) {
@@ -289,7 +358,12 @@ async function handleStructuredExtraction(request, env) {
   const existing = await existingExtraction(env, envelope.envelope_id, payloadSha256);
   if (existing?.conflict) return json(409, { error: "idempotency_conflict", envelopeId: envelope.envelope_id });
   if (existing) {
-    return json(200, { envelopeId: envelope.envelope_id, imports: existing.imports, idempotent: true });
+    const body = { envelopeId: envelope.envelope_id, imports: existing.imports, idempotent: true };
+    if (existing.duplicateReviewRequired) {
+      body.duplicateReviewRequired = true;
+      body.duplicateOfEnvelopeId = existing.duplicateOfEnvelopeId;
+    }
+    return json(200, body);
   }
 
   if (envelope.source.evidence_id) {
@@ -298,6 +372,11 @@ async function handleStructuredExtraction(request, env) {
     ).bind(envelope.source.evidence_id).first();
     if (!evidence) return json(422, { error: "evidence_not_found" });
   }
+
+  const fingerprint = await transactionFingerprint(envelope);
+  const duplicateMatch = await existingTransactionDuplicate(env, fingerprint, envelope.envelope_id);
+  const duplicateOfEnvelopeId = duplicateMatch?.envelope_id ?? null;
+  const duplicateState = duplicateOfEnvelopeId ? "needs_review" : "clear";
 
   const createdAt = new Date().toISOString();
   const importRows = envelope.lines.map((line) => ({
@@ -308,8 +387,8 @@ async function handleStructuredExtraction(request, env) {
   const statements = [
     env.DB.prepare(
       `INSERT INTO receipt_extraction_envelopes
-        (envelope_id, schema_version, record_kind, source_type, source_id, evidence_id, extractor, extracted_at, payload_json, payload_sha256, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (envelope_id, schema_version, record_kind, source_type, source_id, evidence_id, extractor, extracted_at, payload_json, payload_sha256, transaction_fingerprint, duplicate_state, duplicate_of_envelope_id, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).bind(
       envelope.envelope_id,
       envelope.schema_version,
@@ -321,6 +400,9 @@ async function handleStructuredExtraction(request, env) {
       envelope.extracted_at,
       canonicalPayload,
       payloadSha256,
+      fingerprint,
+      duplicateState,
+      duplicateOfEnvelopeId,
       createdAt,
     ),
     env.DB.prepare(
@@ -357,12 +439,25 @@ async function handleStructuredExtraction(request, env) {
     env.DB.prepare(
       `INSERT INTO audit_events
         (event_id, actor_id, action, target_kind, target_id, occurred_at, metadata_json)
-       VALUES (?, 'api_token', 'receipt_extraction_ingested', 'receipt_extraction_envelope', ?, ?, ?)`,
+       VALUES (?, 'api_token', ?, 'receipt_extraction_envelope', ?, ?, ?)`,
     ).bind(
       crypto.randomUUID(),
+      duplicateOfEnvelopeId ? "receipt_extraction_duplicate_flagged" : "receipt_extraction_ingested",
       envelope.envelope_id,
       createdAt,
-      JSON.stringify({ schema_version: envelope.schema_version, line_count: envelope.lines.length, source_type: envelope.source.source_type }),
+      JSON.stringify(duplicateOfEnvelopeId
+        ? {
+            schema_version: envelope.schema_version,
+            line_count: envelope.lines.length,
+            source_type: envelope.source.source_type,
+            duplicate_review_required: true,
+            duplicate_of_envelope_id: duplicateOfEnvelopeId,
+          }
+        : {
+            schema_version: envelope.schema_version,
+            line_count: envelope.lines.length,
+            source_type: envelope.source.source_type,
+          }),
     ),
   ];
 
@@ -379,7 +474,14 @@ async function handleStructuredExtraction(request, env) {
     try {
       const raced = await existingExtraction(env, envelope.envelope_id, payloadSha256);
       if (raced?.conflict) return json(409, { error: "idempotency_conflict", envelopeId: envelope.envelope_id });
-      if (raced) return json(200, { envelopeId: envelope.envelope_id, imports: raced.imports, idempotent: true });
+      if (raced) {
+        const body = { envelopeId: envelope.envelope_id, imports: raced.imports, idempotent: true };
+        if (raced.duplicateReviewRequired) {
+          body.duplicateReviewRequired = true;
+          body.duplicateOfEnvelopeId = raced.duplicateOfEnvelopeId;
+        }
+        return json(200, body);
+      }
     } catch {
       // Fall through to the bounded storage error below.
     }
@@ -390,11 +492,16 @@ async function handleStructuredExtraction(request, env) {
     return json(503, { error: "storage_unavailable" });
   }
 
-  return json(201, {
+  const responseBody = {
     envelopeId: envelope.envelope_id,
     imports: importRows.map(({ importId, lineId }) => ({ importId, lineId })),
     idempotent: false,
-  });
+  };
+  if (duplicateOfEnvelopeId) {
+    responseBody.duplicateReviewRequired = true;
+    responseBody.duplicateOfEnvelopeId = duplicateOfEnvelopeId;
+  }
+  return json(201, responseBody);
 }
 
 export function receiptObjectKey(receiptId, evidenceId) {
@@ -432,6 +539,25 @@ async function handleReceiptUpload(request, env) {
     return json(413, { error: "payload_too_large" });
   }
 
+  const sourceSha256 = await sha256HexBytes(new Uint8Array(body));
+  const existingEvidence = await existingEvidenceBySha(env, sourceSha256);
+  if (existingEvidence) {
+    try {
+      await recordEvidenceDuplicateSeen(env, existingEvidence.evidence_id);
+    } catch (error) {
+      console.error("failed to audit exact duplicate receipt evidence", {
+        evidenceId: existingEvidence.evidence_id,
+        errorName: error instanceof Error ? error.name : "UnknownError",
+      });
+      return json(503, { error: "storage_unavailable" });
+    }
+    return json(200, {
+      receiptId: existingEvidence.receipt_id,
+      evidenceId: existingEvidence.evidence_id,
+      idempotent: true,
+    });
+  }
+
   const receiptId = crypto.randomUUID();
   const evidenceId = crypto.randomUUID();
   const key = receiptObjectKey(receiptId, evidenceId);
@@ -444,9 +570,9 @@ async function handleReceiptUpload(request, env) {
   try {
     const result = await env.DB.prepare(
       `INSERT INTO receipt_evidence
-        (evidence_id, receipt_id, object_key, content_type, byte_length, created_at)
-       VALUES (?, ?, ?, ?, ?, datetime('now'))`,
-    ).bind(evidenceId, receiptId, key, contentType, body.byteLength).run();
+        (evidence_id, receipt_id, object_key, content_type, byte_length, source_sha256, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
+    ).bind(evidenceId, receiptId, key, contentType, body.byteLength, sourceSha256).run();
     if (result?.success === false) {
       throw new Error("D1 insert reported failure");
     }
@@ -456,6 +582,22 @@ async function handleReceiptUpload(request, env) {
     } catch {
       console.error("failed to remove orphaned receipt evidence", { evidenceId });
     }
+
+    // A concurrent identical upload may have won the active hash uniqueness race.
+    try {
+      const raced = await existingEvidenceBySha(env, sourceSha256);
+      if (raced) {
+        await recordEvidenceDuplicateSeen(env, raced.evidence_id);
+        return json(200, {
+          receiptId: raced.receipt_id,
+          evidenceId: raced.evidence_id,
+          idempotent: true,
+        });
+      }
+    } catch {
+      // Fall through to the bounded storage error below.
+    }
+
     console.error("failed to persist receipt evidence metadata", {
       evidenceId,
       errorName: error instanceof Error ? error.name : "UnknownError",
@@ -463,7 +605,7 @@ async function handleReceiptUpload(request, env) {
     return json(503, { error: "storage_unavailable" });
   }
 
-  return json(201, { receiptId, evidenceId });
+  return json(201, { receiptId, evidenceId, idempotent: false });
 }
 
 async function handleEvidenceDownload(request, env, evidenceId) {
