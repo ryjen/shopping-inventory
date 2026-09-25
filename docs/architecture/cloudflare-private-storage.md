@@ -22,11 +22,24 @@ flowchart LR
 ## Private API
 
 - `GET /health`
-- `POST /v1/receipts` — store receipt evidence in R2 plus D1 evidence metadata
+- `POST /v1/receipts` — store receipt evidence in R2 plus D1 evidence metadata; exact byte-identical active evidence is idempotent
 - `GET /v1/evidence/:evidenceId` — retrieve evidence through the Worker
 - `POST /v1/receipt-extractions` — validate and stage a canonical extraction envelope plus raw rows
 
 Every endpoint requires bearer authentication. Evidence object keys and API responses use opaque identifiers.
+
+## Exact receipt evidence identity
+
+Receipt upload computes SHA-256 over the receipt bytes before durable storage.
+
+- `receipt_evidence.source_sha256` stores the private exact-content identity.
+- A partial unique D1 index permits only one active evidence row per exact hash.
+- A byte-identical retry returns the existing opaque receipt/evidence IDs without writing a second R2 object.
+- If two identical uploads race, the D1 uniqueness constraint selects the winner and the losing Worker removes its newly written R2 object before returning the winner IDs.
+- Duplicate observations append a payload-minimal `receipt_evidence_duplicate_observed` audit event.
+- Hash values are not returned by the API or emitted in generic logs/audit metadata.
+
+Exact byte identity is evidence idempotency only. It does not decide whether different evidence represents the same real transaction; that conservative duplicate/review policy remains separate.
 
 ## Structured extraction staging
 
