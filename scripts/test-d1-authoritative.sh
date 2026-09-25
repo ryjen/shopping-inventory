@@ -33,3 +33,4 @@ expect_failure "unapproved purchase promotion" test/fixtures/d1/authoritative-un
 expect_failure "correction fork" test/fixtures/d1/authoritative-fork-negative.sql
 expect_failure "post-promotion approval rewrite" test/fixtures/d1/authoritative-approved-state-negative.sql
 expect_failure "authoritative purchase in-place update" test/fixtures/d1/authoritative-purchase-update-negative.sql
+expect_failure "duplicate active evidence hash" test/fixtures/d1/evidence-duplicate-hash-negative.sql
