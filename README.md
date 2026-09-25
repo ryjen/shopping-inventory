@@ -105,7 +105,7 @@ npm install
 npm run validate
 ```
 
-Focused test commands remain available in `package.json` for local iteration. `npm test` runs every JavaScript test in `test/*.test.mjs`, including the synthetic vertical slice.
+Focused test commands remain available in `package.json` for local iteration. `npm test` runs every JavaScript test in `test/*.test.mjs`, including the synthetic vertical slice. `npm run content:check` validates relative Markdown links and tracked structured fixtures without network access.
 
 Run the Worker locally with synthetic data:
 

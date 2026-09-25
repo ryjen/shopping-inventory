@@ -30,6 +30,7 @@ evaluation/
 ## Principles
 
 - Public fixtures are synthetic, not merely redacted
+- `.synthetic.*` structured records declare `synthetic: true` in content; CSV fixtures carry a `synthetic` column
 - Invent identifiers, merchants, dates, baskets, and totals
 - Preserve parsing difficulty without preserving a real transaction
 - Use only the minimum fields needed by the test
