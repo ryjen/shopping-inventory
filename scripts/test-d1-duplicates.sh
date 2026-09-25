@@ -35,4 +35,5 @@ expect_failure "unresolved duplicate candidate approval" test/fixtures/d1/duplic
 expect_failure "confirmed duplicate candidate approval" test/fixtures/d1/duplicate-confirmed-approval-negative.sql
 expect_failure "direct duplicate-state rewrite" test/fixtures/d1/duplicate-direct-state-negative.sql
 expect_failure "duplicate-event rewrite" test/fixtures/d1/duplicate-event-update-negative.sql
+expect_failure "duplicate-event deletion" test/fixtures/d1/duplicate-event-delete-negative.sql
 expect_failure "parallel reprocessing purchase" test/fixtures/d1/reprocessing-parallel-purchase-negative.sql
