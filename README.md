@@ -71,12 +71,12 @@ The repository includes:
 - a deterministic synthetic vertical slice through review, purchase, stock, budget, and explained shopping recommendation;
 - layered n8n, Cloudflare, schema, D1, privacy, and vertical-slice CI coverage.
 
-The active milestone is **integrity, security, and operational hardening**:
+The active milestone is **security and operational hardening**:
 
-1. complete cross-ingestion duplicate and reprocessing semantics;
-2. complete remaining privacy/supply-chain security controls;
-3. provision/operate the private Cloudflare environment with retention and recovery controls;
-4. expand evaluation/product behavior only after those authority and operational boundaries are stable.
+1. complete remaining privacy/supply-chain security controls;
+2. provision/operate the private Cloudflare environment with retention and recovery controls;
+3. expand the synthetic evaluation corpus after the integrity/security contracts are stable;
+4. begin downstream ingestion/recommendation/export work only through the canonical private substrate.
 
 ## Repository layout
 
