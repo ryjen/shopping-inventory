@@ -37,6 +37,9 @@ jobs:
       - name: Run JavaScript validation suite
         run: npm test
 
+      - name: Validate documentation links and structured fixtures
+        run: npm run content:check
+
       - name: Validate local D1 migrations
         run: npm run cf:migrate:local
 
