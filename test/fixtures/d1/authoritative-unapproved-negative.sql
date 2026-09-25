@@ -1,10 +1,5 @@
 PRAGMA foreign_keys = ON;
 
-DELETE FROM purchases WHERE purchase_id = 'pur_syn_unapproved';
-DELETE FROM purchase_candidates WHERE candidate_id = 'cand_syn_unapproved';
-DELETE FROM import_raw_rows WHERE envelope_id = 'env_syn_unapproved';
-DELETE FROM receipt_extraction_envelopes WHERE envelope_id = 'env_syn_unapproved';
-
 INSERT INTO receipt_extraction_envelopes
   (envelope_id, schema_version, record_kind, source_type, source_id, evidence_id, extractor, extracted_at, payload_json, payload_sha256, created_at)
 VALUES
@@ -20,9 +15,7 @@ INSERT INTO purchase_candidates
 VALUES
   ('cand_syn_unapproved', 'imp_syn_unapproved', 'item', 'item_syn_unapproved', 1, 'each', 4.00, 0.98, 'needs_review', '2026-01-15T18:01:00Z');
 
--- Must fail: source_review_state is constrained to 'approved', but the referenced
--- candidate is still needs_review.
 INSERT INTO purchases
-  (purchase_id, source_candidate_id, source_review_state, canonical_item_id, quantity, unit, amount, acquired_at, supersedes_id, created_at)
+  (purchase_id, source_candidate_id, source_review_state, canonical_item_id, quantity, unit, amount, acquired_at, supersedes_id, created_at, actor_id, actor_kind)
 VALUES
-  ('pur_syn_unapproved', 'cand_syn_unapproved', 'approved', 'item_syn_unapproved', 1, 'each', 4.00, '2026-01-15T10:00:00Z', NULL, '2026-01-15T18:02:00Z');
+  ('pur_syn_unapproved', 'cand_syn_unapproved', 'approved', 'item_syn_unapproved', 1, 'each', 4.00, '2026-01-15T10:00:00Z', NULL, '2026-01-15T18:02:00Z', 'reviewer_syn', 'user');
