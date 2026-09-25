@@ -211,11 +211,13 @@ export async function transactionFingerprintForEnvelope(envelope) {
   }
 
   const merchant = normalizedIdentityText(envelope.merchant_raw);
-  const sourceIdentity = normalizedIdentityText(envelope.source?.source_id);
+  const sourceIdentity = envelope.source?.source_type === "order_email"
+    ? normalizedIdentityText(envelope.source?.source_id)
+    : null;
   const identity = merchant
     ? `merchant:${merchant}`
     : sourceIdentity
-      ? `source:${sourceIdentity}`
+      ? `order_source:${sourceIdentity}`
       : null;
 
   if (!identity || typeof envelope.currency !== "string") return null;
