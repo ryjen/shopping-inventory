@@ -65,9 +65,9 @@ The repository includes:
 - repository-wide privacy validation and pre-write agent guardrails;
 - authenticated Cloudflare Worker receipt evidence and structured staging endpoints;
 - private R2 receipt upload/retrieval with opaque keys;
-- D1 migrations for evidence, structured raw staging, audit metadata, purchase candidates, and immutable authoritative purchases;
+- D1 migrations for evidence, structured raw staging, append-only review/audit events, purchase candidates, and immutable authoritative purchases;
 - versioned JSON Schema contracts for receipt → purchase plus derived stock/budget/recommendation outputs;
-- database-enforced item-only/approved-only promotion, source-candidate idempotency, and purchase supersession/immutability;
+- database-enforced item-only/approved-only promotion, event-projected review state, actor-attributed purchase promotion/correction, source-candidate idempotency, and purchase supersession/immutability;
 - a deterministic synthetic vertical slice through review, purchase, stock, budget, and explained shopping recommendation;
 - layered n8n, Cloudflare, schema, D1, privacy, and vertical-slice CI coverage.
 
@@ -139,6 +139,7 @@ Production credentials and Cloudflare resource identifiers must remain outside t
 - [Sheet/export schema overview](docs/schema/README.md)
 - [Raw import schemas](docs/schema/raw-imports.md)
 - [Ledger and derived schemas](docs/schema/ledger-and-derived.md)
+- [Review and audit events](docs/schema/review-and-audit-events.md)
 - [Normalization pipeline](docs/specs/normalization-pipeline.md)
 - [Receipt ingestion prompt contracts](docs/specs/receipt-ingestion-prompt-contracts.md)
 - [Inventory decay heuristics](docs/specs/inventory-decay-heuristics.md)

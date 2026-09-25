@@ -49,6 +49,9 @@ jobs:
       - name: Exercise authoritative D1 invariants
         run: npm run test:d1:authoritative
 
+      - name: Exercise review and audit D1 invariants
+        run: npm run test:d1:review-audit
+
       - name: Run n8n unit tests
         run: npm run test:n8n:unit
 

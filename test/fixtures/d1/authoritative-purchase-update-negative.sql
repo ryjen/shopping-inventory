@@ -1,10 +1,5 @@
 PRAGMA foreign_keys = ON;
 
-DELETE FROM purchases WHERE purchase_id = 'pur_syn_immutable';
-DELETE FROM purchase_candidates WHERE candidate_id = 'cand_syn_immutable';
-DELETE FROM import_raw_rows WHERE envelope_id = 'env_syn_immutable';
-DELETE FROM receipt_extraction_envelopes WHERE envelope_id = 'env_syn_immutable';
-
 INSERT INTO receipt_extraction_envelopes
   (envelope_id, schema_version, record_kind, source_type, source_id, evidence_id, extractor, extracted_at, payload_json, payload_sha256, created_at)
 VALUES
@@ -18,14 +13,18 @@ VALUES
 INSERT INTO purchase_candidates
   (candidate_id, source_import_id, source_line_type, canonical_item_id, quantity, unit, amount, normalization_confidence, review_state, created_at)
 VALUES
-  ('cand_syn_immutable', 'imp_syn_immutable', 'item', 'item_syn_immutable', 1, 'each', 4.00, 0.98, 'approved', '2026-01-15T18:01:00Z');
+  ('cand_syn_immutable', 'imp_syn_immutable', 'item', 'item_syn_immutable', 1, 'each', 4.00, 0.98, 'needs_review', '2026-01-15T18:01:00Z');
+
+INSERT INTO review_events
+  (event_id, target_kind, target_id, sequence, actor_kind, actor_id, from_state, to_state, occurred_at)
+VALUES
+  ('rev_syn_immutable', 'purchase_candidate', 'cand_syn_immutable', 1, 'user', 'reviewer_syn', 'needs_review', 'approved', '2026-01-15T18:01:30Z');
 
 INSERT INTO purchases
-  (purchase_id, source_candidate_id, source_review_state, canonical_item_id, quantity, unit, amount, acquired_at, supersedes_id, created_at)
+  (purchase_id, source_candidate_id, source_review_state, canonical_item_id, quantity, unit, amount, acquired_at, supersedes_id, created_at, actor_id, actor_kind)
 VALUES
-  ('pur_syn_immutable', 'cand_syn_immutable', 'approved', 'item_syn_immutable', 1, 'each', 4.00, '2026-01-15T10:00:00Z', NULL, '2026-01-15T18:02:00Z');
+  ('pur_syn_immutable', 'cand_syn_immutable', 'approved', 'item_syn_immutable', 1, 'each', 4.00, '2026-01-15T10:00:00Z', NULL, '2026-01-15T18:02:00Z', 'reviewer_syn', 'user');
 
--- Must fail: authoritative purchases cannot be corrected or relinked in place.
 UPDATE purchases
 SET amount = 8.00
 WHERE purchase_id = 'pur_syn_immutable';
