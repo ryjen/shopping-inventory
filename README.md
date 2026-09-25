@@ -67,16 +67,16 @@ The repository includes:
 - private R2 receipt upload/retrieval with opaque keys;
 - D1 migrations for evidence, structured raw staging, append-only review/audit events, purchase candidates, and immutable authoritative purchases;
 - versioned JSON Schema contracts for receipt → purchase plus derived stock/budget/recommendation outputs;
-- database-enforced item-only/approved-only promotion, event-projected review state, actor-attributed purchase promotion/correction, source-candidate idempotency, and purchase supersession/immutability;
+- database-enforced item-only/approved-only promotion, event-projected review/duplicate state, actor-attributed purchase promotion/correction, exact evidence idempotency, conservative transaction-collision review, and purchase supersession/immutability;
 - a deterministic synthetic vertical slice through review, purchase, stock, budget, and explained shopping recommendation;
 - layered n8n, Cloudflare, schema, D1, privacy, and vertical-slice CI coverage.
 
-The active milestone is **provenance and operational hardening**:
+The active milestone is **integrity, security, and operational hardening**:
 
-1. complete append-only review/audit-event semantics;
-2. define cross-ingestion duplicate and reprocessing policy;
-3. finish remaining repository validation and evaluation coverage;
-4. provision/operate the private Cloudflare environment with retention and recovery controls.
+1. complete cross-ingestion duplicate and reprocessing semantics;
+2. complete remaining privacy/supply-chain security controls;
+3. provision/operate the private Cloudflare environment with retention and recovery controls;
+4. expand evaluation/product behavior only after those authority and operational boundaries are stable.
 
 ## Repository layout
 
@@ -134,6 +134,7 @@ Production credentials and Cloudflare resource identifiers must remain outside t
 - [Raw import schemas](docs/schema/raw-imports.md)
 - [Ledger and derived schemas](docs/schema/ledger-and-derived.md)
 - [Review and audit events](docs/schema/review-and-audit-events.md)
+- [Duplicate and reprocessing policy](docs/specs/duplicate-and-reprocessing.md)
 - [Normalization pipeline](docs/specs/normalization-pipeline.md)
 - [Receipt ingestion prompt contracts](docs/specs/receipt-ingestion-prompt-contracts.md)
 - [Inventory decay heuristics](docs/specs/inventory-decay-heuristics.md)
