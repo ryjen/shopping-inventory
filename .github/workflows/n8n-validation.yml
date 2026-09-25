@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   repository-tests:
-    name: privacy, contract, n8n, and Cloudflare tests
+    name: repository validation suite
     runs-on: ubuntu-latest
 
     steps:
@@ -31,14 +31,11 @@ jobs:
       - name: Scan tracked repository for private data
         run: npm run privacy:check
 
-      - name: Test privacy guard regressions
-        run: node --test test/privacy-guard.test.mjs
-
       - name: Install test and Worker dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
 
-      - name: Validate canonical contracts
-        run: npm run test:contracts
+      - name: Run JavaScript validation suite
+        run: npm test
 
       - name: Validate local D1 migrations
         run: npm run cf:migrate:local
@@ -51,18 +48,6 @@ jobs:
 
       - name: Exercise review and audit D1 invariants
         run: npm run test:d1:review-audit
-
-      - name: Run n8n unit tests
-        run: npm run test:n8n:unit
-
-      - name: Run n8n integration tests
-        run: npm run test:n8n:integration
-
-      - name: Run n8n e2e simulation tests
-        run: npm run test:n8n:e2e
-
-      - name: Run Cloudflare storage tests
-        run: npm run test:cloudflare
 
   n8n-cli-import-smoke-test:
     name: n8n CLI import smoke test
