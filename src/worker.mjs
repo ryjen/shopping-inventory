@@ -190,9 +190,13 @@ function canonicalize(value) {
   return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonicalize(value[key])]));
 }
 
-async function sha256Hex(text) {
-  const digest = await crypto.subtle.digest("SHA-256", encoder.encode(text));
+async function sha256HexBytes(bytes) {
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function sha256Hex(text) {
+  return sha256HexBytes(encoder.encode(text));
 }
 
 async function readBoundedText(request, maxBytes) {
@@ -404,6 +408,47 @@ export function receiptObjectKey(receiptId, evidenceId) {
   return `receipts/${receiptId}/${evidenceId}`;
 }
 
+async function findActiveReceiptEvidenceByHash(env, sourceSha256) {
+  return env.DB.prepare(
+    "SELECT evidence_id, receipt_id, object_key FROM receipt_evidence WHERE source_sha256 = ? AND deleted_at IS NULL LIMIT 1",
+  ).bind(sourceSha256).first();
+}
+
+async function recordExactEvidenceDuplicate(env, evidenceId) {
+  const result = await env.DB.prepare(
+    `INSERT INTO audit_events
+      (event_id, actor_id, action, target_kind, target_id, occurred_at, metadata_json, actor_kind)
+     VALUES (?, 'api_token', 'receipt_evidence_duplicate_observed', 'receipt_evidence', ?, ?, ?, 'automation')`,
+  ).bind(
+    crypto.randomUUID(),
+    evidenceId,
+    new Date().toISOString(),
+    JSON.stringify({ identity_kind: "source_sha256" }),
+  ).run();
+
+  if (result?.success === false) {
+    throw new Error("D1 duplicate audit insert reported failure");
+  }
+}
+
+function exactEvidenceResponse(row) {
+  return json(200, {
+    receiptId: row.receipt_id,
+    evidenceId: row.evidence_id,
+    idempotent: true,
+  });
+}
+
+async function removeReceiptObject(env, key, evidenceId) {
+  try {
+    await env.RECEIPTS.delete(key);
+    return true;
+  } catch {
+    console.error("failed to remove orphaned receipt evidence", { evidenceId });
+    return false;
+  }
+}
+
 async function handleReceiptUpload(request, env) {
   const contentType = (request.headers.get("content-type") ?? "")
     .split(";", 1)[0]
@@ -432,6 +477,21 @@ async function handleReceiptUpload(request, env) {
     return json(413, { error: "payload_too_large" });
   }
 
+  const sourceSha256 = await sha256HexBytes(body);
+
+  try {
+    const existing = await findActiveReceiptEvidenceByHash(env, sourceSha256);
+    if (existing) {
+      await recordExactEvidenceDuplicate(env, existing.evidence_id);
+      return exactEvidenceResponse(existing);
+    }
+  } catch (error) {
+    console.error("failed to resolve exact receipt evidence identity", {
+      errorName: error instanceof Error ? error.name : "UnknownError",
+    });
+    return json(503, { error: "storage_unavailable" });
+  }
+
   const receiptId = crypto.randomUUID();
   const evidenceId = crypto.randomUUID();
   const key = receiptObjectKey(receiptId, evidenceId);
@@ -444,18 +504,28 @@ async function handleReceiptUpload(request, env) {
   try {
     const result = await env.DB.prepare(
       `INSERT INTO receipt_evidence
-        (evidence_id, receipt_id, object_key, content_type, byte_length, created_at)
-       VALUES (?, ?, ?, ?, ?, datetime('now'))`,
-    ).bind(evidenceId, receiptId, key, contentType, body.byteLength).run();
+        (evidence_id, receipt_id, object_key, content_type, byte_length, source_sha256, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
+    ).bind(evidenceId, receiptId, key, contentType, body.byteLength, sourceSha256).run();
     if (result?.success === false) {
       throw new Error("D1 insert reported failure");
     }
   } catch (error) {
+    // A concurrent identical upload may have won the unique active-hash insert.
     try {
-      await env.RECEIPTS.delete(key);
+      const raced = await findActiveReceiptEvidenceByHash(env, sourceSha256);
+      if (raced && raced.evidence_id !== evidenceId) {
+        if (!await removeReceiptObject(env, key, evidenceId)) {
+          return json(503, { error: "storage_unavailable" });
+        }
+        await recordExactEvidenceDuplicate(env, raced.evidence_id);
+        return exactEvidenceResponse(raced);
+      }
     } catch {
-      console.error("failed to remove orphaned receipt evidence", { evidenceId });
+      // Fall through to bounded cleanup and the storage error below.
     }
+
+    await removeReceiptObject(env, key, evidenceId);
     console.error("failed to persist receipt evidence metadata", {
       evidenceId,
       errorName: error instanceof Error ? error.name : "UnknownError",
@@ -463,7 +533,7 @@ async function handleReceiptUpload(request, env) {
     return json(503, { error: "storage_unavailable" });
   }
 
-  return json(201, { receiptId, evidenceId });
+  return json(201, { receiptId, evidenceId, idempotent: false });
 }
 
 async function handleEvidenceDownload(request, env, evidenceId) {

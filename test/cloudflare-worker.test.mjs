@@ -87,6 +87,74 @@ function statefulStructuredDb({ evidenceIds = [] } = {}) {
   return db;
 }
 
+function statefulEvidenceDb({ failInsert = false, raceOnInsert = false } = {}) {
+  const state = {
+    byHash: new Map(),
+    inserts: [],
+    audits: [],
+    raced: false,
+  };
+
+  return {
+    state,
+    prepare(sql) {
+      return {
+        bind(...args) {
+          return statement(sql, args, {
+            first: async () => {
+              if (sql.includes("FROM receipt_evidence WHERE source_sha256")) {
+                return state.byHash.get(args[0]) ?? null;
+              }
+              return null;
+            },
+            run: async () => {
+              if (sql.includes("INSERT INTO receipt_evidence")) {
+                const [evidenceId, receiptId, objectKey, contentType, byteLength, sourceSha256] = args;
+
+                if (raceOnInsert && !state.raced) {
+                  state.raced = true;
+                  state.byHash.set(sourceSha256, {
+                    evidence_id: "evidence_syn_race_winner",
+                    receipt_id: "receipt_syn_race_winner",
+                    object_key: "receipts/receipt_syn_race_winner/evidence_syn_race_winner",
+                  });
+                  throw new Error("UNIQUE constraint failed: receipt_evidence.source_sha256");
+                }
+
+                if (failInsert) throw new Error("D1 unavailable");
+                if (state.byHash.has(sourceSha256)) {
+                  throw new Error("UNIQUE constraint failed: receipt_evidence.source_sha256");
+                }
+
+                const row = {
+                  evidence_id: evidenceId,
+                  receipt_id: receiptId,
+                  object_key: objectKey,
+                };
+                state.byHash.set(sourceSha256, row);
+                state.inserts.push({
+                  ...row,
+                  content_type: contentType,
+                  byte_length: byteLength,
+                  source_sha256: sourceSha256,
+                });
+                return { success: true };
+              }
+
+              if (sql.includes("INSERT INTO audit_events")) {
+                state.audits.push(args);
+                return { success: true };
+              }
+
+              return { success: true };
+            },
+          });
+        },
+      };
+    },
+  };
+}
+
 function env(overrides = {}) {
   return {
     API_TOKEN: "test-token",
@@ -312,6 +380,76 @@ test("rejects SVG uploads despite their image media type", async () => {
   assert.equal(response.status, 415);
 });
 
+test("exact duplicate receipt upload reuses active evidence without a second R2 object", async () => {
+  const db = statefulEvidenceDb();
+  const events = [];
+  const testEnv = env({
+    DB: db,
+    RECEIPTS: {
+      put: async (key) => events.push(["put", key]),
+      delete: async (key) => events.push(["delete", key]),
+      get: async () => null,
+    },
+  });
+  const upload = () => worker.fetch(
+    authorizedRequest("/v1/receipts", {
+      method: "POST",
+      headers: { "content-type": "image/jpeg" },
+      body: new Uint8Array([0xff, 0xd8, 0xff, 0x01]),
+    }),
+    testEnv,
+  );
+
+  const first = await upload();
+  const firstBody = await first.json();
+  const second = await upload();
+  const secondBody = await second.json();
+
+  assert.equal(first.status, 201);
+  assert.equal(firstBody.idempotent, false);
+  assert.equal(second.status, 200);
+  assert.equal(secondBody.idempotent, true);
+  assert.equal(secondBody.evidenceId, firstBody.evidenceId);
+  assert.equal(secondBody.receiptId, firstBody.receiptId);
+  assert.equal(events.filter(([kind]) => kind === "put").length, 1);
+  assert.equal(events.filter(([kind]) => kind === "delete").length, 0);
+  assert.equal(db.state.inserts.length, 1);
+  assert.match(db.state.inserts[0].source_sha256, /^[0-9a-f]{64}$/);
+  assert.equal(db.state.audits.length, 1);
+  assert.deepEqual(JSON.parse(db.state.audits[0][3]), { identity_kind: "source_sha256" });
+});
+
+test("concurrent exact duplicate upload removes the losing R2 object", async () => {
+  const db = statefulEvidenceDb({ raceOnInsert: true });
+  const events = [];
+  const response = await worker.fetch(
+    authorizedRequest("/v1/receipts", {
+      method: "POST",
+      headers: { "content-type": "image/jpeg" },
+      body: new Uint8Array([0xff, 0xd8, 0xff, 0x02]),
+    }),
+    env({
+      DB: db,
+      RECEIPTS: {
+        put: async (key) => events.push(["put", key]),
+        delete: async (key) => events.push(["delete", key]),
+        get: async () => null,
+      },
+    }),
+  );
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    receiptId: "receipt_syn_race_winner",
+    evidenceId: "evidence_syn_race_winner",
+    idempotent: true,
+  });
+  assert.equal(events.length, 2);
+  assert.equal(events[0][0], "put");
+  assert.deepEqual(events[1], ["delete", events[0][1]]);
+  assert.equal(db.state.audits.length, 1);
+});
+
 test("removes the R2 object when D1 metadata persistence fails", async () => {
   const events = [];
   const response = await worker.fetch(
@@ -326,11 +464,7 @@ test("removes the R2 object when D1 metadata persistence fails", async () => {
         delete: async (key) => events.push(["delete", key]),
         get: async () => null,
       },
-      DB: {
-        prepare: () => ({
-          bind: () => ({ run: async () => { throw new Error("D1 unavailable"); } }),
-        }),
-      },
+      DB: statefulEvidenceDb({ failInsert: true }),
     }),
   );
 
