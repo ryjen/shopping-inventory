@@ -200,7 +200,7 @@ async function sha256Hex(text) {
 }
 
 function normalizeFingerprintText(value) {
-  return value.normalize("NFKC").trim().toLowerCase().replace(/\\s+/g, " ");
+  return value.normalize("NFKC").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
 async function transactionFingerprint(envelope) {
