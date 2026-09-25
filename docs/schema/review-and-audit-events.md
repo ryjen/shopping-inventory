@@ -7,8 +7,9 @@ Review state is a workflow projection, not mutable historical truth.
 The persistence model therefore separates:
 
 - immutable extraction/raw evidence;
+- event-projected transaction duplicate status on extraction envelopes;
 - immutable normalization candidates;
-- append-only review decisions;
+- append-only review and duplicate decisions;
 - immutable authoritative purchases;
 - append-only audit evidence for promotion and correction.
 
@@ -50,9 +51,15 @@ Allowed terminal transitions:
 
 A changed normalization interpretation creates a new candidate rather than rewriting the existing candidate.
 
+## Duplicate event model
+
+`duplicate_events` records attributable terminal decisions for transaction-fingerprint collisions. The later colliding envelope is projected to `needs_review`; only an append-only event may move it to `distinct` or `confirmed_duplicate`. Direct state/version rewrites are rejected.
+
+See [Duplicate and reprocessing policy](../specs/duplicate-and-reprocessing.md).
+
 ## Evidence immutability
 
-`receipt_extraction_envelopes` cannot be updated in place.
+`receipt_extraction_envelopes` evidence fields and transaction fingerprint cannot be updated in place. Only event/collision-projected duplicate state/version may change.
 
 `import_raw_rows` may change only their event-projected `review_state` and `review_version`; extraction/provenance fields are immutable.
 
@@ -81,6 +88,6 @@ It does not:
 - replace canonical purchase records with an event log;
 - define user identity/authentication itself;
 - define evidence retention/deletion;
-- define cross-receipt duplicate policy.
+- perform fuzzy or autonomous duplicate classification.
 
 The goal is the smallest durable history needed for review accountability and authoritative mutation provenance.
