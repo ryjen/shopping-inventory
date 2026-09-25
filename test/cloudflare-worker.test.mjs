@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import worker, { receiptObjectKey, validateReceiptExtractionEnvelope } from "../src/worker.mjs";
+import worker, { receiptObjectKey, transactionFingerprintForEnvelope, validateReceiptExtractionEnvelope } from "../src/worker.mjs";
 
 const canonicalFixture = JSON.parse(await readFile(
   new URL("../evaluation/fixtures/canonical-receipt-v1.synthetic.json", import.meta.url),
@@ -210,6 +210,49 @@ test("canonical synthetic extraction satisfies the Worker intake contract", () =
   assert.deepEqual(validateReceiptExtractionEnvelope(canonicalFixture.envelope), []);
 });
 
+test("transaction fingerprints normalize strong identity fields conservatively", async () => {
+  const left = {
+    ...canonicalFixture.envelope,
+    envelope_id: "env_syn_fp_left",
+    merchant_raw: "  EXAMPLE   Market  ",
+    purchased_at: "2026-01-15T10:00:35Z",
+  };
+  const right = {
+    ...canonicalFixture.envelope,
+    envelope_id: "env_syn_fp_right",
+    merchant_raw: "example market",
+    purchased_at: "2026-01-15T10:00:59Z",
+  };
+
+  const leftFingerprint = await transactionFingerprintForEnvelope(left);
+  const rightFingerprint = await transactionFingerprintForEnvelope(right);
+
+  assert.match(leftFingerprint, /^[0-9a-f]{64}$/);
+  assert.equal(leftFingerprint, rightFingerprint);
+  assert.notEqual(
+    leftFingerprint,
+    await transactionFingerprintForEnvelope({ ...right, receipt_total: 6.06 }),
+  );
+});
+
+test("transaction fingerprints prefer unknown over weak identity", async () => {
+  assert.equal(
+    await transactionFingerprintForEnvelope({
+      ...canonicalFixture.envelope,
+      merchant_raw: null,
+      source: { ...canonicalFixture.envelope.source, source_id: "" },
+    }),
+    null,
+  );
+  assert.equal(
+    await transactionFingerprintForEnvelope({
+      ...canonicalFixture.envelope,
+      purchased_at: null,
+    }),
+    null,
+  );
+});
+
 test("structured intake requires RFC3339 date-time values", () => {
   const invalid = {
     ...canonicalFixture.envelope,
@@ -301,6 +344,9 @@ test("structured intake atomically stages envelope, raw rows, and payload-free a
   assert.doesNotMatch(sql, /insert into purchases/);
   assert.doesNotMatch(sql, /insert into stock/);
   assert.doesNotMatch(sql, /budget/);
+
+  const envelopeInsert = db.state.batches[0].find((item) => item.sql.includes("INSERT INTO receipt_extraction_envelopes"));
+  assert.match(envelopeInsert.args[10], /^[0-9a-f]{64}$/);
 
   const audit = db.state.batches[0].find((item) => item.sql.includes("INSERT INTO audit_events"));
   const auditMetadata = JSON.parse(audit.args[3]);

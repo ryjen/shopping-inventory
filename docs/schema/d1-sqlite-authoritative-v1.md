@@ -21,7 +21,8 @@ Application code should not be the only thing preventing an invalid promotion. T
 - a purchase's source candidate is actually `approved`;
 - one candidate produces at most one authoritative purchase;
 - authoritative purchases cannot be updated in place;
-- one purchase has at most one direct superseding correction.
+- one purchase has at most one direct superseding correction;
+- a reprocessed candidate for the same raw row must supersede the current effective Purchase.
 
 ## `purchase_candidates`
 
@@ -74,6 +75,7 @@ A `BEFORE UPDATE` trigger rejects every in-place modification to `purchases`. Th
 - `supersedes_id` cannot equal `purchase_id`.
 - supersession is a self-referencing foreign key; corrections create a new immutable purchase rather than mutating the old purchase in place.
 - a correction may itself be superseded, producing a linear chain.
+- a second candidate derived from the same immutable raw row cannot create a parallel acquisition; once a current Purchase exists, reprocessing must continue that supersession chain.
 
 The database prevents direct correction forks and in-place cycle creation, but selecting the effective latest purchase remains a domain/query concern.
 
@@ -106,6 +108,7 @@ CI applies migrations to Wrangler local D1 and runs synthetic positive/negative 
 - an unapproved candidate cannot become a purchase;
 - a second direct correction fork is rejected;
 - a promoted candidate's historical approved state cannot be rewritten;
-- an authoritative purchase cannot be updated in place.
+- an authoritative purchase cannot be updated in place;
+- reprocessing the same raw row without superseding its current Purchase is rejected.
 
 No production resources or private household data are required for these checks.

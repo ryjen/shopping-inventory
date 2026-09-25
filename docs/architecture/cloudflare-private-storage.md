@@ -41,6 +41,20 @@ Receipt upload computes SHA-256 over the receipt bytes before durable storage.
 
 Exact byte identity is evidence idempotency only. It does not decide whether different evidence represents the same real transaction; that conservative duplicate/review policy remains separate.
 
+## Transaction duplicate review
+
+Structured envelopes may also receive a private transaction fingerprint when merchant/order identity, purchase time, currency, and total provide a sufficiently strong deterministic projection.
+
+- only the SHA-256 fingerprint is stored;
+- purchase time is normalized to UTC-minute precision;
+- a collision on a later envelope sets `duplicate_state=needs_review`;
+- collision equality is not treated as proof of duplicate identity;
+- append-only `duplicate_events` record a reviewer decision of `distinct` or `confirmed_duplicate`;
+- unresolved/confirmed duplicate state blocks candidate approval and Purchase promotion.
+
+See [Duplicate and reprocessing policy](../specs/duplicate-and-reprocessing.md).
+
+
 ## Structured extraction staging
 
 `POST /v1/receipt-extractions` is a raw/staging boundary only:
@@ -51,10 +65,11 @@ Exact byte identity is evidence idempotency only. It does not decide whether dif
 4. generate opaque IDs for flattened raw rows;
 5. validate an optional evidence reference;
 6. pass the generated rows as one bounded JSON array and expand them with D1 `json_each()`;
-7. write the envelope, all raw rows, and minimal audit metadata in one three-statement D1 `batch()` transaction;
-8. verify the reported raw-row write count;
-9. make identical retries idempotent and reject conflicting reuse of an envelope ID;
-10. return only opaque envelope/import identifiers.
+7. compute/store a private transaction fingerprint when strong identity fields are present; D1 flags a later collision for review;
+8. write the envelope, all raw rows, and minimal audit metadata in one three-statement D1 `batch()` transaction;
+9. verify the reported raw-row write count;
+10. make identical retries idempotent and reject conflicting reuse of an envelope ID;
+11. return only opaque envelope/import identifiers.
 
 Using `json_each()` keeps D1 query count constant as receipt size grows instead of creating one database statement per line. The 500-line limit is therefore a defensive memory/input bound rather than a provider-query workaround.
 
