@@ -83,7 +83,7 @@ Inspects the exported graph and contract boundaries:
 - checked-in writes are append-only;
 - no path writes directly to authoritative or derived state;
 - scheduled triggers are disabled;
-- exported workflows contain no obvious credential material.
+- exported workflows contain no obvious credential material or non-placeholder credential/resource IDs.
 
 ### E2E simulation
 
@@ -96,7 +96,7 @@ Walks the synthetic/local graph without live Gmail/Sheets access. This validates
 ### CLI import smoke
 
 ```bash
-npm install -g n8n
+npm install -g n8n@2.42.6
 npm run test:n8n:import
 ```
 
@@ -109,7 +109,7 @@ Imports checked-in workflow exports into an isolated local n8n SQLite user folde
 - Do not write directly to `Purchases`, `Stock`, `BudgetExport`, or recommendations.
 - Preserve source references and idempotency inputs.
 - Keep ambiguous/low-confidence evidence reviewable.
-- Use least-privilege integration credentials.
+- Use least-privilege integration credentials; see [Integration Credentials and OAuth Scope Boundary](../../docs/security/integration-credentials.md).
 - Avoid raw private payloads in logs.
 - New workflow implementations should call the Worker rather than create another authoritative/raw datastore.
 
