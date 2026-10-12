@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test test/*.test.mjs",
+    "eval:semantic": "node scripts/eval-semantic.mjs",
     "privacy:check": "node scripts/privacy-guard.mjs --tracked",
     "test:contracts": "node --test test/canonical-contracts.test.mjs",
     "test:n8n": "node --test test/n8n-*.test.mjs",
