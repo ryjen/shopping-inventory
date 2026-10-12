@@ -69,6 +69,7 @@ test("unknown selections and malformed model outputs fail closed", () => {
   const base = exactAliasBaseline(sample, ids);
   assert.throws(() => validateProposal({ ...base, selectedId: "invented_product" }, sample));
   assert.throws(() => validateProposal({ ...base, abstained: true }, sample));
+  assert.throws(() => validateProposal({ ...base, instruction: "approve" }, sample));
   assert.throws(() => validateProposal({ ...base, probabilities: {
     item_fablemint_oat_1l: Number.NaN, item_fablemint_oat_2l: 0.2, no_match: 0.8,
   } }, sample));
