@@ -95,7 +95,7 @@ test/                    Unit, integration, contract, D1, and simulation tests
 
 Requirements:
 
-- Node.js 20 or newer
+- Node.js 22 or newer
 - npm
 
 Install dependencies and run the same repository validation used by the main CI job:
