@@ -125,6 +125,8 @@ Production credentials and Cloudflare resource identifiers must remain outside t
 - [Private Data Policy](docs/security/private-data-policy.md)
 - [Threat model and privacy considerations](docs/security/threat-model-and-privacy.md)
 - [Security reporting policy](SECURITY.md)
+- [Supply-chain and dependency security](docs/security/supply-chain.md)
+- [Integration credential and OAuth scope boundary](docs/security/integration-credentials.md)
 - [Public data incident response](docs/runbooks/public-data-incident-response.md)
 - [Cloudflare private storage](docs/architecture/cloudflare-private-storage.md)
 - [Private receipt storage runbook](docs/runbooks/private-receipt-storage.md)
