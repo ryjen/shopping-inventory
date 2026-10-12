@@ -1,0 +1,69 @@
+{
+  "synthetic": true,
+  "version": 1,
+  "items": [
+    {
+      "id": "item_fablemint_spinach_142",
+      "name": "Fablemint Baby Spinach 142g",
+      "aliases": [
+        "FAB SPIN 142"
+      ]
+    },
+    {
+      "id": "item_fablemint_spinach_312",
+      "name": "Fablemint Baby Spinach 312g",
+      "aliases": [
+        "FAB SPIN 312"
+      ]
+    },
+    {
+      "id": "item_fablemint_spring_mix_142",
+      "name": "Fablemint Spring Mix 142g",
+      "aliases": [
+        "FAB MIX 142"
+      ]
+    },
+    {
+      "id": "item_fablemint_oat_1l",
+      "name": "Fablemint Oat Drink 1L",
+      "aliases": [
+        "FAB OAT 1L"
+      ]
+    },
+    {
+      "id": "item_fablemint_oat_2l",
+      "name": "Fablemint Oat Drink 2L",
+      "aliases": [
+        "FAB OAT 2L"
+      ]
+    },
+    {
+      "id": "item_fablemint_soap_citrus",
+      "name": "Fablemint Citrus Soap",
+      "aliases": [
+        "FAB CITRUS SOAP"
+      ]
+    },
+    {
+      "id": "item_fablemint_soap_plain",
+      "name": "Fablemint Plain Soap",
+      "aliases": [
+        "FAB PLAIN SOAP"
+      ]
+    },
+    {
+      "id": "item_fablemint_litter_18kg",
+      "name": "Fablemint Cat Litter 18kg",
+      "aliases": [
+        "FAB LITTER 18KG"
+      ]
+    },
+    {
+      "id": "item_fablemint_litter_10kg",
+      "name": "Fablemint Cat Litter 10kg",
+      "aliases": [
+        "FAB LITTER 10KG"
+      ]
+    }
+  ]
+}
