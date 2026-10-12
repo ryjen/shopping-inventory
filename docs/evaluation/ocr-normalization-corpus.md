@@ -19,7 +19,7 @@ This document defines a lightweight evaluation corpus for receipt OCR extraction
 
 ## Corpus structure
 
-Avoid storing raw sensitive receipts in the public repository. Use synthetic, redacted, or minimal examples.
+Avoid storing raw sensitive receipts in the public repository. Use only materially synthetic examples; redacting a real receipt is not sufficient for public publication.
 
 Recommended structure:
 
@@ -43,6 +43,7 @@ Each case should include one raw input and one expected normalization decision.
 
 ```json
 {
+  "synthetic": true,
   "case_id": "receipt_banana_abbrev_001",
   "source_type": "receipt_photo",
   "merchant_normalized": "Example Grocer",
@@ -158,7 +159,7 @@ Do not commit:
 Prefer:
 
 - synthetic receipt lines
-- redacted merchant names
+- invented merchant and item names; do not transform actual receipts by redaction
 - artificial dates
 - minimal examples that preserve parsing difficulty
 
@@ -171,6 +172,10 @@ Before changing alias, normalization, or decay rules:
 3. Compare actual output to expected output
 4. Review mismatches
 5. Update rules or expected cases deliberately
+
+## Offline semantic evaluation
+
+A first small, **synthetic-only** semantic candidate-matching baseline is available through `npm run eval:semantic` and `test/semantic-baseline.test.mjs`. It reports selective risk and abstention with hard-policy vetoes, separate from duplicate detection, receipt authority, and stock forecasting. See [semantic normalization benchmark](../specs/semantic-normalization-evaluation.md). This baseline does not evaluate production matching accuracy.
 
 ## Future automation
 
