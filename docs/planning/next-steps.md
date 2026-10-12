@@ -56,6 +56,13 @@ After the current integrity/security contracts are stable:
 - expand review-routing, stock-decay, and budget fixtures;
 - keep expected outputs executable and materially synthetic.
 
+## Optional model research (not on the critical path)
+
+- **[#42](https://github.com/ryjen/shopping-inventory/issues/42) — P2 semantic normalization benchmark:** After #4's synthetic corpus expands, compare deterministic review routing against optional Jev and local classifiers. The [benchmark design](../specs/semantic-normalization-evaluation.md) and [ADR-0007](../decisions/ADR-0007-advisory-semantic-decision-boundary.md) prohibit production model calls or authority changes from this evaluation issue.
+- **[#43](https://github.com/ryjen/shopping-inventory/issues/43) — P3 JEPA feasibility:** Deferred unless separately observed stock/consumption labels and baseline failure justify it. See the [data readiness gate](../research/jepa-stock-prediction-feasibility.md). No runtime/model training work is currently planned.
+
+These are research candidates, not blockers for #16, #18, #23–#26 or the canonical release.
+
 ## Product expansion after hardening
 
 Downstream work remains:

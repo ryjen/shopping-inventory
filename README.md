@@ -146,6 +146,9 @@ Production credentials and Cloudflare resource identifiers must remain outside t
 
 - [n8n automation workflows](automation/n8n/README.md)
 - [Evaluation fixtures](evaluation/README.md)
+- [Semantic normalization benchmark (Jev and local baselines)](docs/specs/semantic-normalization-evaluation.md)
+- [ADR-0007: advisory semantic decisions and authority boundary](docs/decisions/ADR-0007-advisory-semantic-decision-boundary.md)
+- [JEPA stock-prediction feasibility gate](docs/research/jepa-stock-prediction-feasibility.md)
 - [Next steps](docs/planning/next-steps.md)
 
 ## Status

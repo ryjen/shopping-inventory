@@ -27,6 +27,10 @@ evaluation/
 4. Compare actual output to expected output
 5. Update rules or fixtures deliberately
 
+## Semantic model evaluations
+
+[Semantic normalization evaluation](../docs/specs/semantic-normalization-evaluation.md) defines a proposed provider-neutral, synthetic-only benchmark for optional Jev and local decision models (tracked in [#42](https://github.com/ryjen/shopping-inventory/issues/42)). It does **not** make model calls part of required CI or allow model decisions to approve purchases. Synthetic fixture expansion remains owned by [#4](https://github.com/ryjen/shopping-inventory/issues/4).
+
 ## Principles
 
 - Public fixtures are synthetic, not merely redacted
