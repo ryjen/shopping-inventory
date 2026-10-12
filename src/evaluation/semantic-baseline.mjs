@@ -42,6 +42,8 @@ export function validateCase(item, catalogById) {
 
 export function validateProposal(proposal, item) {
   if (!proposal || typeof proposal !== "object" || Array.isArray(proposal)) fail("invalid provider proposal");
+  const allowedKeys = new Set(["selectedId", "abstained", "modelId", "adapterVersion", "probabilities"]);
+  if (Object.keys(proposal).some((key) => !allowedKeys.has(key))) fail("unexpected provider fields");
   if (typeof proposal.abstained !== "boolean" ||
       !("selectedId" in proposal) ||
       (proposal.selectedId !== null && !item.candidateIds.includes(proposal.selectedId)) ||
