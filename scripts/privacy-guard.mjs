@@ -33,6 +33,10 @@ const RECEIPT_SIGNALS = [
 
 const PAYMENT_IDENTIFIER = /(?:card|visa|mastercard|amex|payment)[^\n]{0,32}(?:\*{2,}|x{2,})?\d{4}\b/i;
 const LOYALTY_IDENTIFIER = /(?:loyalty|membership|member|rewards)(?:[_ -]?(?:id|number|no))?\s*[:=]\s*["']?[A-Za-z0-9-]{5,}/i;
+const PHONE_NUMBER = /(?:^|[^\d])(?:\+?1[ .-]?)?\(?[2-9]\d{2}\)?[ .-]\d{3}[ .-]\d{4}(?!\d)/m;
+const CANADIAN_POSTAL_CODE = /\b[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTVWXYZ][ -]?\d[ABCEGHJ-NPRSTVWXYZ]\d\b/i;
+const STREET_ADDRESS = /\b\d{1,6}\s+[A-Z0-9][A-Z0-9.'-]*(?:\s+[A-Z0-9][A-Z0-9.'-]*){0,5}\s+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way|Place|Pl|Highway|Hwy)\b/i;
+const PRIVATE_URL = /\bhttps?:\/\/(?:10(?:\.\d{1,3}){3}|192\.168(?:\.\d{1,3}){2}|172\.(?:1[6-9]|2\d|3[01])(?:\.\d{1,3}){2}|100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])(?:\.\d{1,3}){2}|(?:[a-z0-9-]+\.)*(?:internal|lan|local|home))(?:[:/]\S*)?/i;
 
 function normalizePath(filePath) {
   return filePath.replaceAll("\\", "/").replace(/^\.\//, "");
@@ -87,6 +91,9 @@ export function scanText(filePath, text) {
 
   if (PAYMENT_IDENTIFIER.test(text)) violations.add("payment-identifier");
   if (LOYALTY_IDENTIFIER.test(text)) violations.add("loyalty-identifier");
+  if (PHONE_NUMBER.test(text)) violations.add("personal-phone-number");
+  if (CANADIAN_POSTAL_CODE.test(text) || STREET_ADDRESS.test(text)) violations.add("postal-address");
+  if (PRIVATE_URL.test(text)) violations.add("private-internal-url");
 
   // Receipt-shaped fixture files are exempt only when they live in a designated
   // fixture directory and explicitly identify themselves as synthetic. Markdown
