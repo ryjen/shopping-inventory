@@ -94,6 +94,31 @@ test("rejects payment and loyalty identifiers without storing literal identifier
   assert.deepEqual(violations, ["loyalty-identifier", "payment-identifier"]);
 });
 
+test("rejects phone, postal-address, and private-network URL shapes", () => {
+  const phone = join("604", "-", "555", "-", "0184");
+  const postal = join("V7", "R ", "2N9");
+  const street = join("742", " Cedar Example ", "Road");
+  const privateUrl = join("https://", "192", ".168.", "24", ".7/private-receipt");
+
+  assert.deepEqual(scanText("notes/contact.txt", `phone: ${phone}`), [
+    "personal-phone-number",
+  ]);
+  assert.deepEqual(scanText("notes/location.txt", `postal: ${postal}`), [
+    "postal-address",
+  ]);
+  assert.deepEqual(scanText("notes/location.txt", `address: ${street}`), [
+    "postal-address",
+  ]);
+  assert.deepEqual(scanText("notes/source.txt", `source: ${privateUrl}`), [
+    "private-internal-url",
+  ]);
+});
+
+test("public placeholder and loopback URLs remain usable", () => {
+  assert.deepEqual(scanText("docs/example.md", "https://example.test/receipt"), []);
+  assert.deepEqual(scanText("docs/development.md", "http://127.0.0.1:8787"), []);
+});
+
 test("rejects known private/import locations even with harmless content", () => {
   assert.deepEqual(scanText("imports/receipts/new.json", "{}"), [
     "prohibited-private-path",

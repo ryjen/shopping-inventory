@@ -124,6 +124,8 @@ Production credentials and Cloudflare resource identifiers must remain outside t
 - [ADR-0006: private Cloudflare operating substrate](docs/decisions/ADR-0006-public-code-private-cloudflare-substrate.md)
 - [Private Data Policy](docs/security/private-data-policy.md)
 - [Threat model and privacy considerations](docs/security/threat-model-and-privacy.md)
+- [Security reporting policy](SECURITY.md)
+- [Public data incident response](docs/runbooks/public-data-incident-response.md)
 - [Cloudflare private storage](docs/architecture/cloudflare-private-storage.md)
 - [Private receipt storage runbook](docs/runbooks/private-receipt-storage.md)
 

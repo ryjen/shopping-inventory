@@ -82,12 +82,6 @@ Issue #10 tracks the audit and remediation of receipt-derived data already prese
 
 ## Incident response
 
-If private data or credentials are committed:
+Use the [Public Data Incident Response runbook](../runbooks/public-data-incident-response.md) for containment, scope analysis, credential rotation, Git-history decisions, artifact cleanup, and regression evidence.
 
-1. stop further distribution and close or block the affected pull request;
-2. revoke or rotate exposed credentials and source links;
-3. identify all branches, tags, artifacts, forks, and clones that may contain the data;
-4. migrate any required data to approved private storage;
-5. remove the data and decide whether Git history rewriting is necessary;
-6. document the incident without reproducing the private payload;
-7. add a regression check when practical.
+Security findings must be reported through the private path in [SECURITY.md](../../SECURITY.md). Do not reproduce sensitive payloads in public issues, pull requests, or comments.
