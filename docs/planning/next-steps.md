@@ -1,105 +1,81 @@
 # Next Steps
 
-The repository has completed the initial privacy/schema foundation and the synthetic end-to-end acceptance path. The active work is now hardening provenance, duplicate handling, validation, and the private operational environment before broad product expansion.
+The repository has completed the architecture, provenance, validation, exact-evidence identity, and conservative transaction duplicate/reprocessing foundations. The active work is now security/supply-chain hardening and private operational readiness before broader product expansion.
 
 ## Completed foundation
 
-Merged repository work now provides:
+Merged repository work provides:
 
 - public-code/private-data enforcement and incident remediation;
 - authenticated Worker + private R2 evidence storage;
 - structured D1 receipt-extraction staging;
 - executable JSON Schema contracts for receipt → purchase;
-- D1/SQLite candidate and immutable-purchase invariants;
+- D1/SQLite item/approval/immutability and supersession invariants;
+- append-only actor-attributed review/audit semantics (#14);
+- deterministic complete repository validation, relative-link/fixture gates, and local `npm run validate` (#8);
+- exact byte-level receipt evidence identity with race-safe R2/D1 idempotency (#13);
+- conservative transaction-fingerprint collisions with append-only `distinct` / `confirmed_duplicate` review;
+- promotion blocking for unresolved/confirmed duplicates;
+- mandatory Purchase supersession when normalization reprocesses the same raw row;
 - deterministic synthetic receipt → review → purchase → stock → budget → recommendation acceptance coverage.
 
-These are no longer planning tasks.
+These are implementation contracts, not remaining planning tasks.
 
-## Repository hardening track
-
-### 1. Append-only review/audit semantics — #14
+## P1 repository security track — #16
 
 Outcome:
 
-- approval, rejection, override, and correction decisions are attributable and append-only;
-- mutable review-state projections cannot silently diverge from permitted event history;
-- audit metadata remains payload-minimal.
+- public privacy guard covers remaining prohibited personal-data classes with bounded false positives;
+- required dependency installs are reproducible from committed lock/version evidence;
+- the n8n CLI smoke test uses a governed/pinned version rather than latest global install;
+- dependency/secret scanning and update posture are explicit;
+- integration OAuth/credential lifecycle is documented;
+- private vulnerability reporting and accidental-disclosure response are complete.
 
-Exit criteria:
+Keep the independent n8n import smoke as evidence; improve its reproducibility/latency rather than deleting it.
 
-- synthetic transition tests cover valid and invalid review paths;
-- authoritative evidence remains immutable;
-- review/correction actions have durable actor and provenance evidence.
+## P1 operational private-environment track — #18
 
-### 2. Cross-ingestion duplicate/reprocessing policy — #13
-
-Outcome:
-
-- retries remain idempotent;
-- distinct evidence representing the same transaction is detected or routed to review;
-- legitimate similar purchases are not silently collapsed;
-- normalization-rule reprocessing has defined authoritative behavior.
-
-Exit criteria:
-
-- exact, near-duplicate, retry, and reprocessing fixtures are executable;
-- reviewer override is attributable.
-
-### 3. Repository validation completion — #8
-
-Outcome:
-
-- documentation links and remaining JSON/JSONL/CSV fixture families have deterministic validation;
-- contributors have one documented local validation entry point equivalent to required CI.
-
-Exit criteria:
-
-- stale/broken docs and malformed remaining fixture formats fail CI without production credentials.
-
-### 4. Evaluation corpus expansion — #4
-
-Outcome:
-
-- synthetic normalization, classification, duplicate, review-routing, stock-decay, and budget cases cover the important failure modes discovered by the vertical slice.
-
-Exit criteria:
-
-- corpus changes have expected outputs;
-- ambiguous cases intentionally remain reviewable rather than silently canonicalized.
-
-## Operational private-environment track
-
-### Provision and operate private D1/R2 — #18
-
-This work can proceed independently where private Cloudflare credentials/resources are available.
+This may proceed independently where private Cloudflare credentials/resources are available.
 
 Outcome:
 
 - isolated private development/production D1 and R2 resources;
 - deployed authenticated Worker;
-- one real receipt can traverse the private path without Git/Sheets/public intermediates;
-- retention/deletion, export/restore, credential rotation, quota/cost controls are documented and tested.
+- one real receipt traverses the private path without Git/Sheets/public intermediates;
+- retention/deletion, deterministic export/restore, credential rotation, abuse/rate controls, and quota/cost monitoring are established.
 
-Repository CI must remain synthetic and credential-free.
+Repository CI remains synthetic and credential-free.
+
+## P2 evaluation expansion — #4
+
+After the current integrity/security contracts are stable:
+
+- add normalization/classification edge cases;
+- encode exact/likely/distinct duplicate cases against the accepted duplicate policy;
+- expand review-routing, stock-decay, and budget fixtures;
+- keep expected outputs executable and materially synthetic.
 
 ## Product expansion after hardening
 
-The following remain downstream:
+Downstream work remains:
 
 - #23 Gmail/ecommerce receipt ingestion;
 - #24 explained shopping/deal recommendations;
 - #25 meal-planning/nutrition-aware suggestions;
 - #26 external budget spreadsheet export.
 
-They must consume the canonical/private substrate rather than introduce parallel truth stores.
+These must consume the Worker/D1/R2 canonical/private substrate and must not introduce parallel authoritative Sheets or direct integration writes.
 
 ## Current priority
 
 For repository-only work:
 
-1. #14 review/audit event semantics
-2. #13 duplicate/reprocessing policy
-3. #8 validation completion
-4. #4 evaluation corpus expansion
+1. #16 security/supply-chain hardening
+2. #4 evaluation corpus expansion after #16's core reproducibility/security gates
 
-For private operations, #18 may proceed in parallel when the private Cloudflare environment is available.
+For private operations:
+
+1. #18 can proceed in parallel with repository-only #16 work
+
+Product issues #23–#26 remain P2 until the P1 security/operational boundary is ready.

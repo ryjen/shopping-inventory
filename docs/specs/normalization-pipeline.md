@@ -65,14 +65,17 @@ The raw row remains unchanged.
 
 ### 3. Evaluate duplicate risk
 
-Duplicate handling has two distinct levels:
+Duplicate handling has three distinct levels:
 
-- **idempotent retry:** the same source/envelope/candidate operation must not create duplicate state;
-- **transaction identity:** distinct evidence may describe the same real purchase and must be detected or conservatively routed to review.
+- **operation idempotency:** replaying the same envelope/candidate operation does not create duplicate state;
+- **exact evidence identity:** byte-identical receipt evidence reuses the active object by private SHA-256 identity;
+- **transaction similarity:** a deterministic private fingerprint may flag distinct envelopes that share normalized merchant/order identity, UTC-minute purchase time, currency, and total.
 
-Stable inputs may include source/evidence hashes, provider message/order identifiers, transaction timestamps, merchant/total signals, and line fingerprints. Private source values should remain private; persisted/public diagnostics should prefer opaque IDs or hashes.
+A transaction fingerprint collision is **not proof**. The later envelope is preserved and routed to duplicate review. An attributable append-only decision marks it `distinct` or `confirmed_duplicate`; unresolved/confirmed state blocks authoritative promotion.
 
-A possible cross-source duplicate is **not silently discarded or merged**. The policy and reviewer override semantics are owned by #13.
+If strong fingerprint inputs are missing, no similarity conclusion is invented.
+
+See [Duplicate and reprocessing policy](duplicate-and-reprocessing.md).
 
 ### 4. Canonicalize
 
@@ -111,6 +114,8 @@ Persistence enforces:
 - approved-only promotion;
 - immutable Purchase records;
 - corrections by superseding insert rather than update;
+- reprocessing the same raw row must supersede its current effective Purchase;
+- unresolved/confirmed transaction duplicate risk blocks promotion;
 - actor-attributed promotion/correction audit events.
 
 Re-running the same promotion does not create another authoritative purchase.
@@ -127,7 +132,7 @@ Stock snapshots, budget exports, and shopping recommendations consume authoritat
 | Ambiguous item interpretation | Keep candidate in review |
 | Non-item receipt line | Never promote as acquisition |
 | Exact retry | Idempotent response/no duplicate authoritative state |
-| Possible cross-source duplicate | Route to duplicate review under #13 |
+| Possible cross-source duplicate | Preserve evidence and route later collision to append-only duplicate review |
 | Invalid review transition | Reject |
 | In-place evidence/candidate/Purchase rewrite | Reject |
 | Inconsistent transaction reconciliation | Review |
