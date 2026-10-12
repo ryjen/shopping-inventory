@@ -107,11 +107,16 @@ export function evaluateSemanticCases(cases, catalog, decide = exactAliasBaselin
   if (!Array.isArray(cases) || cases.length === 0) fail("no cases");
   const caseIds = new Set();
   const rows = [];
+  let provider = null;
   for (const item of cases) {
     validateCase(item, catalogById);
     if (caseIds.has(item.caseId)) fail("duplicate case ID");
     caseIds.add(item.caseId);
     const proposal = validateProposal(decide(item, catalogById), item);
+    if (provider === null) provider = { modelId: proposal.modelId, adapterVersion: proposal.adapterVersion };
+    if (provider.modelId !== proposal.modelId || provider.adapterVersion !== proposal.adapterVersion) {
+      fail("inconsistent provider version within one evaluation");
+    }
     // A provider suggestion may never bypass a deterministic hard-policy veto.
     const selectedId = item.hardFlags.length ? null : proposal.selectedId;
     rows.push({ cohort: item.cohort, split: item.split, selectedId, expectedId: item.expectedId });
@@ -120,7 +125,8 @@ export function evaluateSemanticCases(cases, catalog, decide = exactAliasBaselin
   const splits = [...SPLITS];
   return {
     schemaVersion: 1,
-    modelId: "synthetic-exact-alias",
+    modelId: provider.modelId,
+    adapterVersion: provider.adapterVersion,
     note: "Synthetic-only offline coverage; no evidence of production accuracy or purchase authority.",
     summary: summarize(rows),
     bySplit: Object.fromEntries(splits.map((split) =>
