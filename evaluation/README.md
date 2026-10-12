@@ -31,6 +31,10 @@ evaluation/
 
 [Semantic normalization evaluation](../docs/specs/semantic-normalization-evaluation.md) defines a proposed provider-neutral, synthetic-only benchmark for optional Jev and local decision models (tracked in [#42](https://github.com/ryjen/shopping-inventory/issues/42)). It does **not** make model calls part of required CI or allow model decisions to approve purchases. Synthetic fixture expansion remains owned by [#4](https://github.com/ryjen/shopping-inventory/issues/4).
 
+## Offline semantic baseline (first slice of #4/#42)
+
+Run `npm run eval:semantic` to score the intentionally conservative exact-alias reference against the independent, materially synthetic `semantic-catalog.synthetic.json` and `semantic-items.synthetic.jsonl` fixtures. The command reports only aggregate results; it does not call a remote model or write to purchases, aliases, review events, stock, or the Worker. Required `npm test` also validates fixture shape, test-split membership, unknown/malformed provider responses and hard-policy vetoes. This initial small corpus is **not** a calibrated or statistically adequate performance evaluation and must not justify automatic normalization.
+
 ## Principles
 
 - Public fixtures are synthetic, not merely redacted
