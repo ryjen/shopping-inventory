@@ -187,6 +187,33 @@ test('raw row builders emit required schema fields by convention', async () => {
   }
 });
 
+test('workflow exports contain placeholder-only credentials and resource identifiers', async () => {
+  for (const file of await workflowFiles()) {
+    const { workflow } = await readWorkflow(file);
+
+    for (const node of workflow.nodes) {
+      for (const credential of Object.values(node.credentials ?? {})) {
+        assert.equal(credential?.id, 'TODO', `${file}: credential id on ${node.name} must remain a placeholder`);
+        assert.match(
+          String(credential?.name ?? ''),
+          /^TODO\b/,
+          `${file}: credential name on ${node.name} must remain a placeholder`,
+        );
+      }
+    }
+
+    const configuration = workflow.nodes.find((node) => node.name === 'Configuration');
+    assert.ok(configuration, `${file}: Configuration node is required`);
+    const assignments = configuration.parameters?.assignments?.assignments ?? [];
+    const spreadsheetId = assignments.find((item) => item.name === 'spreadsheetId');
+    assert.equal(
+      spreadsheetId?.value,
+      'TODO_GOOGLE_SHEET_ID',
+      `${file}: spreadsheetId must remain a public placeholder`,
+    );
+  }
+});
+
 test('workflow exports do not contain real credential material', async () => {
   for (const file of await workflowFiles()) {
     const { raw } = await readWorkflow(file);
