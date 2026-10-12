@@ -18,46 +18,22 @@ jobs:
   repository-tests:
     name: repository validation suite
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
+          cache: npm
 
       - name: Scan tracked repository for private data
         run: npm run privacy:check
 
       - name: Install test and Worker dependencies
-        run: npm install --ignore-scripts --no-audit --no-fund
-
-      - name: Capture generated npm lock
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: generated-package-lock
-          path: package-lock.json
-          if-no-files-found: error
-          retention-days: 1
-
-      - name: Commit runner-generated npm lock
-        if: github.event_name == 'pull_request' && github.head_ref == 'agent/dependency-security-hardening-clean'
-        run: |
-          if git diff --quiet -- package-lock.json && git ls-files --error-unmatch package-lock.json >/dev/null 2>&1; then
-            echo "package-lock.json already matches generated graph"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json
-          git commit -m "build: commit npm-resolved dependency lock"
-          git push origin HEAD:"${GITHUB_HEAD_REF}"
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Run JavaScript validation suite
         run: npm test
@@ -99,6 +75,7 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
+          cache: npm
 
       - name: Install n8n CLI
         run: npm install -g "n8n@${N8N_CLI_VERSION}" --no-audit --no-fund
