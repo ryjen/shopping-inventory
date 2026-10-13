@@ -68,7 +68,7 @@ type Decision = {
 };
 ```
 
-The validation layer rejects a returned ID outside `candidateIds`, duplicate IDs, invalid option distributions, unexpected keys or non-finite numbers. A model's `confidence` field is not presumed to equal empirical probability. Preserve raw provider results privately if collected; public evaluation output must be synthetic and payload-minimal.
+The validation layer rejects a returned ID outside `candidateIds`, duplicate IDs, invalid option distributions, unexpected keys or non-finite numbers. The implemented offline proposal validator currently accepts `selectedId`, `abstained`, `probabilities`, `modelId`, and `adapterVersion`; the conceptual `elapsedMs` field above is reserved for future evaluation extension, not yet accepted in responses. A model's `confidence` field is not presumed to equal empirical probability. Preserve raw provider results privately if collected; public evaluation output must be synthetic and payload-minimal.
 
 Jev adapter shape when trialed: send bounded synthetic context as `state` with a `choice` question whose criteria are the candidate IDs **plus** `no_match`. Consider independent `noul`/ `score` questions only when they answer distinct atomic questions. Pin the exact model/API version, capture question text and option ordering. Prefer the official TypeSafe API documentation over third-party gateway examples.
 
@@ -96,7 +96,7 @@ Do not use a real receipt copied and redacted. Invent names, baskets, identifier
 - Evaluate at least two candidate orders for Jev (and any order-sensitive provider); randomization must be seeded and recorded.
 - Do not optimize on the test split. Keep tuning/validation/test partitions separate; if the corpus is too small, report that limitation.
 - Record fixture/spec revisions and deterministic normalization commit hash.
-- A starting target is at least 100 materially synthetic, diverse cases, with the cohort breakdown explicitly reported. A small passing suite is **not** statistical proof of production safety.
+- A starting target is at least 100 materially synthetic, diverse cases, with the cohort breakdown explicitly reported. The current 50-case corpus covers six additional invented product families, including family-grouped development/validation/test assignments, but is **not** statistical proof of production safety. Existing original cases are not family-disjoint; future coverage must audit split leakage before claiming generalization.
 
 ## Baselines and experiments
 
@@ -117,7 +117,7 @@ Use identical candidate shortlists and case splits when comparing selection mode
 | Coverage/abstention | Fraction resolved vs sent to review |
 | Recall@k of shortlist | Fraction of cases with a known, non-null catalog gold item where its ID was present in the candidate shortlist; exclude true no-match cases from denominator |
 | Review workload | Expected manual decisions avoided or wrongly induced |
-| Calibration | Brier score / reliability bins / ECE on supported probabilities; report sample limits |
+| Calibration | Implemented: conditional multiclass Brier score and probability coverage on eligible cases only. Future: reliability bins / ECE after sufficient genuinely observed labeled predictions; invented replay probabilities are test data, not calibration evidence |
 | Stability | Repeats, candidate-order perturbations, timeout/error paths |
 | Performance and cost | p50/p95 latency, estimated per-1k-line cost, operational dependencies |
 
@@ -136,7 +136,7 @@ Prefer a **risk–coverage curve** rather than a single confidence threshold. Se
 
 ## Reproducibility, deliverables, and close criteria
 
-Proposed future harness entry point: `npm run eval:semantic` (not yet implemented). The command should run offline without credentials, use frozen responses for external contenders, and emit aggregated machine-readable and Markdown reports without private line content. Live benchmark execution, if supported, must be an explicitly separate opt-in command.
+`npm run eval:semantic` runs the current offline deterministic baseline over the synthetic corpus. `npm run eval:semantic -- --replay` runs a **scripted synthetic test double** with strict case/candidate-order binding and compares it against exact-alias decisions on the same ten cases. It does not invoke Jev, a local model, or a real inference provider; its invented probabilities only validate mechanical Brier scoring. Report output is aggregate JSON without raw text or identifiers from the fixture. No live benchmark execution is authorized by this command.
 
 Deliver:
 1. Versioned synthetic evaluation cases, expected IDs, splits and taxonomy, aligned with #4.
