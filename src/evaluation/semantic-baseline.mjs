@@ -114,6 +114,14 @@ function summarize(rows) {
   // Keep mandatory policy vetoes outside the independent model-selection denominator.
   const eligibleSelection = rows.filter((row) =>
     !row.hardVeto && (row.expectedId === null || row.retrievable));
+  const probabilityRows = eligibleSelection.filter((row) => row.probabilities !== undefined);
+  // Multi-class Brier / 2, calculated only where the gold class is selectable.
+  // This is a mechanical scoring check, not evidence that toy probabilities are calibrated.
+  const brier = probabilityRows.map((row) => {
+    const gold = row.expectedId ?? "no_match";
+    return Object.entries(row.probabilities).reduce((total, [id, prob]) =>
+      total + (prob - Number(id === gold)) ** 2, 0) / 2;
+  });
   return {
     ...summarizeDecisions(rows, "selectedId"), // end-to-end outcome, including vetoes and retrieval misses
     knownTargets,
@@ -125,6 +133,9 @@ function summarize(rows) {
       excludedRetrievalMisses: unreachable.length,
       excludedPolicyVetoes: rows.filter((row) =>
         row.hardVeto && (row.expectedId === null || row.retrievable)).length,
+      probabilityCases: probabilityRows.length,
+      probabilityCoverage: eligibleSelection.length ? probabilityRows.length / eligibleSelection.length : null,
+      meanBrier: brier.length ? brier.reduce((a, b) => a + b, 0) / brier.length : null,
     },
     unreachableSelection: {
       total: unreachable.length,
@@ -154,6 +165,7 @@ export function evaluateSemanticCases(cases, catalog, decide = exactAliasBaselin
     rows.push({
       cohort: item.cohort, split: item.split, selectedId, proposedId: proposal.selectedId,
       expectedId: item.expectedId, hardVeto: item.hardFlags.length > 0,
+      probabilities: proposal.probabilities,
       retrievable: item.expectedId !== null && item.candidateIds.includes(item.expectedId),
     });
   }
