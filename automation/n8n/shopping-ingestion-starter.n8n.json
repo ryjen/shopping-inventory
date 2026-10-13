@@ -1,4 +1,5 @@
 {
+  "id": "synthetic_shopping_inventory_starter",
   "name": "Shopping inventory ingestion starter",
   "nodes": [
     {
