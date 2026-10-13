@@ -46,6 +46,12 @@ test("exact-match baseline is conservative, deterministic and does not mutate in
   assert.equal(report.summary.retrievableTargets, 12);
   assert.equal(report.summary.retrievalMisses, 1);
   assert.equal(report.summary.shortlistRecall, 12 / 13);
+  assert.equal(report.summary.conditionalSelection.total, 17);
+  assert.equal(report.summary.conditionalSelection.excludedRetrievalMisses, 1);
+  assert.equal(report.summary.conditionalSelection.excludedPolicyVetoes, 1);
+  assert.equal(report.summary.conditionalSelection.falseMatches, 0);
+  assert.equal(report.summary.unreachableSelection.total, 1);
+  assert.equal(report.summary.unreachableSelection.abstentions, 1);
   assert.equal(report.summary.selectiveRisk, 0);
 });
 
@@ -59,10 +65,25 @@ test("retrieval miss counts as unreachable gold without allowing a fabricated se
   assert.equal(report.summary.retrievalMisses, 1);
   assert.equal(report.summary.shortlistRecall, 0);
   assert.equal(report.summary.missedMatches, 1);
+  assert.equal(report.summary.conditionalSelection.total, 0);
+  assert.equal(report.summary.conditionalSelection.missedMatches, 0);
+  assert.equal(report.summary.unreachableSelection.abstentions, 1);
   assert.throws(() => validateProposal({
     selectedId: sample.expectedId, abstained: false,
     modelId: "fabricated-gold", adapterVersion: "1",
   }, sample), "model may not select outside retrieved shortlist");
+});
+
+test("a false selection after retrieval misses gold is not a conditional model hit", () => {
+  const sample = byId.get("shortlist_missed_true_item");
+  const report = evaluateSemanticCases([sample], catalog, (item) => ({
+    selectedId: item.candidateIds[0], abstained: false,
+    modelId: "mock-hallucination", adapterVersion: "1",
+  }));
+  assert.equal(report.summary.falseMatches, 1);
+  assert.equal(report.summary.unreachableSelection.falseSelections, 1);
+  assert.equal(report.summary.conditionalSelection.total, 0);
+  assert.equal(report.summary.conditionalSelection.falseMatches, 0);
 });
 
 test("shortlist recall is undefined for unknown-only gold labels", () => {
@@ -88,6 +109,8 @@ test("external provider output cannot bypass hard-policy veto in scoring", () =>
   assert.equal(report.modelId, "mock-provider");
   assert.equal(report.summary.resolved, 0);
   assert.equal(report.summary.missedMatches, 1);
+  assert.equal(report.summary.conditionalSelection.total, 0);
+  assert.equal(report.summary.conditionalSelection.excludedPolicyVetoes, 1);
 });
 
 test("unknown selections and malformed model outputs fail closed", () => {
@@ -124,4 +147,6 @@ test("a wrong confident contender produces measurable false-match risk", () => {
   }));
   assert.equal(result.summary.falseMatches, 1);
   assert.equal(result.summary.selectiveRisk, 1);
+  assert.equal(result.summary.conditionalSelection.falseMatches, 1);
+  assert.equal(result.summary.conditionalSelection.selectiveRisk, 1);
 });
