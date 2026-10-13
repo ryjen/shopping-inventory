@@ -16,3 +16,4 @@
 {"synthetic":true,"caseId":"unseen_identity","split":"test","cohort":"no_match","rawLine":"FAB MYSTERY 500","candidateIds":["item_fablemint_soap_citrus","item_fablemint_soap_plain"],"expectedId":null,"hardFlags":[]}
 {"synthetic":true,"caseId":"unicode_confusable","split":"test","cohort":"unicode_confusable","rawLine":"FAB OΑT 1L","candidateIds":["item_fablemint_oat_1l","item_fablemint_oat_2l"],"expectedId":null,"hardFlags":[]}
 {"synthetic":true,"caseId":"mixed_case_alias","split":"development","cohort":"known_alias","rawLine":"  fab   plain SOAP  ","candidateIds":["item_fablemint_soap_citrus","item_fablemint_soap_plain"],"expectedId":"item_fablemint_soap_plain","hardFlags":[]}
+{"synthetic":true,"caseId":"shortlist_missed_true_item","split":"test","cohort":"retrieval_miss","rawLine":"FAB SPIN 142","candidateIds":["item_fablemint_spinach_312","item_fablemint_spring_mix_142"],"expectedId":"item_fablemint_spinach_142","hardFlags":[]}
