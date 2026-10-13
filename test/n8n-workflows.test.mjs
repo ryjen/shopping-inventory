@@ -202,10 +202,25 @@ function assertPlaceholderOnlyWorkflowResources(workflow, file = 'synthetic-expo
     // Check the actual input consumed by n8n, not only a Configuration assignment.
     // Expressions other than the exact approved reference are not equivalent to a placeholder.
     const documentId = node.parameters?.documentId;
+    assert.deepEqual(Object.keys(documentId ?? {}).sort(), ['__rl', 'mode', 'value'].sort(),
+      `${file}: ${node.name} must not export cached or unknown document locator metadata`);
     assert.equal(documentId?.__rl, true, `${file}: ${node.name} requires a resource locator`);
     assert.equal(documentId?.mode, 'id', `${file}: ${node.name} must resolve the configured spreadsheet ID`);
     assert.equal(documentId?.value, ALLOWED_SHEET_DOCUMENT_EXPR,
       `${file}: ${node.name} may only reference Configuration.spreadsheetId`);
+
+    const sheetNames = new Map([
+      ['Append Orders_Raw', "={{ $('Configuration').first().json.ordersSheetName }}"],
+      ['Append Deals_Raw', "={{ $('Configuration').first().json.dealsSheetName }}"],
+    ]);
+    assert.ok(sheetNames.has(node.name), `${file}: unreviewed Sheets node ${node.name}`);
+    const sheetName = node.parameters?.sheetName;
+    assert.deepEqual(Object.keys(sheetName ?? {}).sort(), ['__rl', 'mode', 'value'].sort(),
+      `${file}: ${node.name} must not export cached or unknown sheet locator metadata`);
+    assert.equal(sheetName?.__rl, true, `${file}: ${node.name} requires a sheet locator`);
+    assert.equal(sheetName?.mode, 'name', `${file}: ${node.name} must resolve the configured sheet name`);
+    assert.equal(sheetName?.value, sheetNames.get(node.name),
+      `${file}: ${node.name} must use the explicitly approved sheet reference`);
   }
 
   const configuration = workflow.nodes.find((node) => node.name === 'Configuration');
@@ -242,6 +257,20 @@ test('literal, indirect and spoofed Sheets document locators are rejected', asyn
     changed.nodes[index].parameters.documentId = injected;
     assert.throws(() => assertPlaceholderOnlyWorkflowResources(changed),
       'invalid document locator must fail before publication');
+  }
+
+  for (const [locator, field] of [
+    ['documentId', 'cachedResultUrl'],
+    ['documentId', 'cachedResultName'],
+    ['sheetName', 'cachedResultUrl'],
+    ['sheetName', 'cachedResultName'],
+    ['sheetName', 'unexpectedMetadata'],
+  ]) {
+    const changed = structuredClone(workflow);
+    changed.nodes[index].parameters[locator][field] =
+      'https://docs.google.com/spreadsheets/d/synthetic-unapproved-locator/edit';
+    assert.throws(() => assertPlaceholderOnlyWorkflowResources(changed),
+      `cached or unrecognized ${locator}.${field} must fail publication`);
   }
 
   const changed = structuredClone(workflow);
