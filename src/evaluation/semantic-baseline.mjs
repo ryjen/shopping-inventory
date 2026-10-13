@@ -33,8 +33,9 @@ export function validateCase(item, catalogById) {
   if (!Array.isArray(item.candidateIds) || item.candidateIds.length === 0) fail("empty candidate shortlist");
   if (new Set(item.candidateIds).size !== item.candidateIds.length ||
       item.candidateIds.some((id) => typeof id !== "string" || !catalogById.has(id))) fail("unknown/duplicate candidate ID");
-  if (item.expectedId !== null && !item.candidateIds.includes(item.expectedId)) {
-    fail("expected ID must be null or in the candidate shortlist");
+  // Gold truth is independent of retrieval. The candidate shortlist may miss it.
+  if (item.expectedId !== null && !catalogById.has(item.expectedId)) {
+    fail("expected ID must be null or in the canonical catalog");
   }
   if (!Array.isArray(item.hardFlags) ||
       item.hardFlags.some((flag) => typeof flag !== "string" || !flag.trim())) fail("invalid hard-policy flags");
@@ -85,22 +86,51 @@ export function exactAliasBaseline(item, catalogById) {
   };
 }
 
-function summarize(rows) {
+function summarizeDecisions(rows, decisionKey) {
   const total = rows.length;
-  const resolved = rows.filter((row) => row.selectedId !== null).length;
+  const resolved = rows.filter((row) => row[decisionKey] !== null).length;
   const correctSelected = rows.filter((row) =>
-    row.selectedId !== null && row.selectedId === row.expectedId).length;
+    row[decisionKey] !== null && row[decisionKey] === row.expectedId).length;
   const falseMatches = rows.filter((row) =>
-    row.selectedId !== null && row.selectedId !== row.expectedId).length;
+    row[decisionKey] !== null && row[decisionKey] !== row.expectedId).length;
   const missedMatches = rows.filter((row) =>
-    row.selectedId === null && row.expectedId !== null).length;
+    row[decisionKey] === null && row.expectedId !== null).length;
   const correctAbstentions = rows.filter((row) =>
-    row.selectedId === null && row.expectedId === null).length;
+    row[decisionKey] === null && row.expectedId === null).length;
   return {
     total, resolved, correctSelected, falseMatches, missedMatches, correctAbstentions,
     coverage: total ? resolved / total : null,
     selectivePrecision: resolved ? correctSelected / resolved : null,
     selectiveRisk: resolved ? falseMatches / resolved : null,
+    decisionAccuracy: total ? (correctSelected + correctAbstentions) / total : null,
+  };
+}
+
+function summarize(rows) {
+  const knownTargets = rows.filter((row) => row.expectedId !== null).length;
+  const retrievableTargets = rows.filter((row) => row.expectedId !== null && row.retrievable).length;
+  const unreachable = rows.filter((row) => row.expectedId !== null && !row.retrievable);
+  // Selection performance cannot be measured against gold absent from the shortlist.
+  // Keep mandatory policy vetoes outside the independent model-selection denominator.
+  const eligibleSelection = rows.filter((row) =>
+    !row.hardVeto && (row.expectedId === null || row.retrievable));
+  return {
+    ...summarizeDecisions(rows, "selectedId"), // end-to-end outcome, including vetoes and retrieval misses
+    knownTargets,
+    retrievableTargets,
+    retrievalMisses: knownTargets - retrievableTargets,
+    shortlistRecall: knownTargets ? retrievableTargets / knownTargets : null,
+    conditionalSelection: {
+      ...summarizeDecisions(eligibleSelection, "proposedId"),
+      excludedRetrievalMisses: unreachable.length,
+      excludedPolicyVetoes: rows.filter((row) =>
+        row.hardVeto && (row.expectedId === null || row.retrievable)).length,
+    },
+    unreachableSelection: {
+      total: unreachable.length,
+      abstentions: unreachable.filter((row) => row.proposedId === null).length,
+      falseSelections: unreachable.filter((row) => row.proposedId !== null).length,
+    },
   };
 }
 
@@ -121,7 +151,11 @@ export function evaluateSemanticCases(cases, catalog, decide = exactAliasBaselin
     }
     // A provider suggestion may never bypass a deterministic hard-policy veto.
     const selectedId = item.hardFlags.length ? null : proposal.selectedId;
-    rows.push({ cohort: item.cohort, split: item.split, selectedId, expectedId: item.expectedId });
+    rows.push({
+      cohort: item.cohort, split: item.split, selectedId, proposedId: proposal.selectedId,
+      expectedId: item.expectedId, hardVeto: item.hardFlags.length > 0,
+      retrievable: item.expectedId !== null && item.candidateIds.includes(item.expectedId),
+    });
   }
   const cohorts = [...new Set(rows.map((row) => row.cohort))].sort();
   const splits = [...SPLITS];
