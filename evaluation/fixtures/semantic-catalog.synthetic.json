@@ -64,6 +64,98 @@
       "aliases": [
         "FAB LITTER 10KG"
       ]
+    },
+    {
+      "id": "item_demovale_flour_1",
+      "name": "DemoVale Whole Wheat Flour 1kg",
+      "aliases": [
+        "DV WH FLOUR 1KG"
+      ]
+    },
+    {
+      "id": "item_demovale_flour_2",
+      "name": "DemoVale Whole Wheat Flour 2kg",
+      "aliases": [
+        "DV WH FLOUR 2KG"
+      ]
+    },
+    {
+      "id": "item_demovale_yog_plain",
+      "name": "DemoVale Plain Dairy Yogurt 500g",
+      "aliases": [
+        "DV YOG PLAIN 500"
+      ]
+    },
+    {
+      "id": "item_demovale_yog_vanilla",
+      "name": "DemoVale Vanilla Dairy Yogurt 500g",
+      "aliases": [
+        "DV YOG VAN 500"
+      ]
+    },
+    {
+      "id": "item_demovale_yog_plant",
+      "name": "DemoVale Plain Plant Yogurt 500g",
+      "aliases": [
+        "DV YOG PLANT 500"
+      ]
+    },
+    {
+      "id": "item_demovale_pasta_regular",
+      "name": "DemoVale Regular Pasta 454g",
+      "aliases": [
+        "DV PASTA REG 454"
+      ]
+    },
+    {
+      "id": "item_demovale_pasta_gf",
+      "name": "DemoVale Gluten Free Pasta 454g",
+      "aliases": [
+        "DV PASTA GF 454"
+      ]
+    },
+    {
+      "id": "item_demovale_juice_pulp",
+      "name": "DemoVale Orange Juice With Pulp 1L",
+      "aliases": [
+        "DV OJ PULP 1L"
+      ]
+    },
+    {
+      "id": "item_demovale_juice_nopulp",
+      "name": "DemoVale Orange Juice No Pulp 1L",
+      "aliases": [
+        "DV OJ NP 1L",
+        "DV OJ NO PULP 1L"
+      ]
+    },
+    {
+      "id": "item_demovale_battery_aa",
+      "name": "DemoVale AA Batteries 8 Pack",
+      "aliases": [
+        "DV BAT AA 8"
+      ]
+    },
+    {
+      "id": "item_demovale_battery_aaa",
+      "name": "DemoVale AAA Batteries 8 Pack",
+      "aliases": [
+        "DV BAT AAA 8"
+      ]
+    },
+    {
+      "id": "item_demovale_dish_20",
+      "name": "DemoVale Dish Tablets 20 Count",
+      "aliases": [
+        "DV DISH TAB 20"
+      ]
+    },
+    {
+      "id": "item_demovale_dish_40",
+      "name": "DemoVale Dish Tablets 40 Count",
+      "aliases": [
+        "DV DISH TAB 40"
+      ]
     }
   ]
 }
