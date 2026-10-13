@@ -194,7 +194,7 @@ function assertPlaceholderOnlyWorkflowResources(workflow, file = 'synthetic-expo
   for (const node of workflow.nodes ?? []) {
     for (const credential of Object.values(node.credentials ?? {})) {
       assert.equal(credential?.id, 'TODO', `${file}: credential id on ${node.name} must remain a placeholder`);
-      assert.match(String(credential?.name ?? ''), /^TODO\\b/,
+      assert.match(String(credential?.name ?? ''), /^TODO\b/,
         `${file}: credential name on ${node.name} must remain a placeholder`);
     }
 
