@@ -21,13 +21,13 @@ const byId = new Map(cases.map((item) => [item.caseId, item]));
 const ids = validateCatalog(catalog);
 
 test("synthetic benchmark cases are valid, unique, and split explicitly", () => {
-  assert.equal(cases.length, 18);
+  assert.equal(cases.length, 19);
   assert.equal(new Set(cases.map((item) => item.caseId)).size, cases.length);
   for (const item of cases) validateCase(item, ids);
   const report = evaluateSemanticCases(cases, catalog);
   assert.equal(report.bySplit.development.total, 8);
   assert.equal(report.bySplit.validation.total, 4);
-  assert.equal(report.bySplit.test.total, 6);
+  assert.equal(report.bySplit.test.total, 7);
 });
 
 test("exact-match baseline is conservative, deterministic and does not mutate input", () => {
@@ -36,13 +36,39 @@ test("exact-match baseline is conservative, deterministic and does not mutate in
   assert.equal(JSON.stringify(cases), before);
   assert.deepEqual(report, evaluateSemanticCases(cases, catalog));
   assert.equal(report.modelId, "synthetic-exact-alias");
-  assert.equal(report.summary.total, 18);
+  assert.equal(report.summary.total, 19);
   assert.equal(report.summary.resolved, 9);
   assert.equal(report.summary.falseMatches, 0);
   assert.equal(report.summary.correctSelected, 9);
-  assert.equal(report.summary.missedMatches, 3);
+  assert.equal(report.summary.missedMatches, 4);
   assert.equal(report.summary.correctAbstentions, 6);
+  assert.equal(report.summary.knownTargets, 13);
+  assert.equal(report.summary.retrievableTargets, 12);
+  assert.equal(report.summary.retrievalMisses, 1);
+  assert.equal(report.summary.shortlistRecall, 12 / 13);
   assert.equal(report.summary.selectiveRisk, 0);
+});
+
+test("retrieval miss counts as unreachable gold without allowing a fabricated selection", () => {
+  const sample = byId.get("shortlist_missed_true_item");
+  assert.doesNotThrow(() => validateCase(sample, ids));
+  assert.equal(exactAliasBaseline(sample, ids).selectedId, null);
+  const report = evaluateSemanticCases([sample], catalog);
+  assert.equal(report.summary.knownTargets, 1);
+  assert.equal(report.summary.retrievableTargets, 0);
+  assert.equal(report.summary.retrievalMisses, 1);
+  assert.equal(report.summary.shortlistRecall, 0);
+  assert.equal(report.summary.missedMatches, 1);
+  assert.throws(() => validateProposal({
+    selectedId: sample.expectedId, abstained: false,
+    modelId: "fabricated-gold", adapterVersion: "1",
+  }, sample), "model may not select outside retrieved shortlist");
+});
+
+test("shortlist recall is undefined for unknown-only gold labels", () => {
+  const report = evaluateSemanticCases([byId.get("unseen_identity")], catalog);
+  assert.equal(report.summary.knownTargets, 0);
+  assert.equal(report.summary.shortlistRecall, null);
 });
 
 test("unit ambiguity, unseen identities and injected text abstain", () => {
