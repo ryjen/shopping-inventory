@@ -53,7 +53,7 @@ type EvaluationCase = {
   rawLine: string;             // invented, not derived by redaction
   parsedQuantity?: string;
   candidateIds: string[];      // deterministic ordered shortlist
-  expectedId: string | null;   // null = no_match/unknown
+  expectedId: string | null;   // independent gold truth: null = no_match/unknown; non-null may be absent from candidateIds
   hardFlags: string[];         // e.g. unit_conflict, review_required
   cohort: string;              // taxonomy defined below
 };
@@ -106,7 +106,7 @@ Do not use a real receipt copied and redacted. Invent names, baskets, identifier
 4. **Jev:** opt-in hosted trial, synthetic inputs only.
 5. **Generative model:** only if required to establish a useful comparator; bound output to same candidate set.
 
-Use identical candidate shortlists and case splits when comparing selection models. Measure retrieval recall separately from selection precision; otherwise poor shortlist coverage can be misattributed to the model.
+Use identical candidate shortlists and case splits when comparing selection models. **Gold truth must remain independent of retrieval:** a known catalog item may be absent from `candidateIds`. Score this as a retrieval miss, not as an invalid fixture, and prohibit any provider from selecting an ID outside the supplied shortlist. Measure retrieval recall separately from selective precision, including held-out cases where the correct item was not retrieved; otherwise poor shortlist coverage can be misattributed to the model.
 
 ## Metrics and decision gates
 
@@ -115,7 +115,7 @@ Use identical candidate shortlists and case splits when comparing selection mode
 | False-positive identity match | Wrong non-null canonical ID, especially wrong package/size |
 | Selective precision and risk | Accuracy/error among non-abstentions, at reported coverage |
 | Coverage/abstention | Fraction resolved vs sent to review |
-| Recall@k of shortlist | Fraction where true ID was retrievable |
+| Recall@k of shortlist | Fraction of cases with a known, non-null catalog gold item where its ID was present in the candidate shortlist; exclude true no-match cases from denominator |
 | Review workload | Expected manual decisions avoided or wrongly induced |
 | Calibration | Brier score / reliability bins / ECE on supported probabilities; report sample limits |
 | Stability | Repeats, candidate-order perturbations, timeout/error paths |
