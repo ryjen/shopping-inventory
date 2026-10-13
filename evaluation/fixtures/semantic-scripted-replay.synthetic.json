@@ -1,0 +1,216 @@
+{
+  "synthetic": true,
+  "contractVersion": 1,
+  "source": "scripted-test-double",
+  "modelId": "synthetic-scripted-replay",
+  "adapterVersion": "1",
+  "notes": "Invented offline responses to validate replay/scoring only; no Jev, local inference, model calibration evidence, or vendor data.",
+  "entries": [
+    {
+      "caseId": "alias_spinach_142",
+      "input": {
+        "rawLine": "FAB SPIN 142",
+        "candidateIds": [
+          "item_fablemint_spinach_142",
+          "item_fablemint_spinach_312",
+          "item_fablemint_spring_mix_142"
+        ],
+        "hardFlags": []
+      },
+      "decision": {
+        "selectedId": "item_fablemint_spinach_142",
+        "abstained": false,
+        "probabilities": {
+          "item_fablemint_spinach_142": 0.85,
+          "item_fablemint_spinach_312": 0.05,
+          "item_fablemint_spring_mix_142": 0.05,
+          "no_match": 0.05
+        }
+      }
+    },
+    {
+      "caseId": "oat_unknown_size",
+      "input": {
+        "rawLine": "FAB OAT",
+        "candidateIds": [
+          "item_fablemint_oat_1l",
+          "item_fablemint_oat_2l"
+        ],
+        "hardFlags": []
+      },
+      "decision": {
+        "selectedId": null,
+        "abstained": true,
+        "probabilities": {
+          "item_fablemint_oat_1l": 0.1,
+          "item_fablemint_oat_2l": 0.1,
+          "no_match": 0.8
+        }
+      }
+    },
+    {
+      "caseId": "shortlist_missed_true_item",
+      "input": {
+        "rawLine": "FAB SPIN 142",
+        "candidateIds": [
+          "item_fablemint_spinach_312",
+          "item_fablemint_spring_mix_142"
+        ],
+        "hardFlags": []
+      },
+      "decision": {
+        "selectedId": null,
+        "abstained": true,
+        "probabilities": {
+          "item_fablemint_spinach_312": 0.05,
+          "item_fablemint_spring_mix_142": 0.05,
+          "no_match": 0.9
+        }
+      }
+    },
+    {
+      "caseId": "exp_yog_contradiction",
+      "input": {
+        "rawLine": "DV YOG PLANT 500",
+        "candidateIds": [
+          "item_demovale_yog_plain",
+          "item_demovale_yog_vanilla",
+          "item_demovale_yog_plant"
+        ],
+        "hardFlags": [
+          "unit_conflict"
+        ]
+      },
+      "decision": {
+        "selectedId": "item_demovale_yog_plant",
+        "abstained": false,
+        "probabilities": {
+          "item_demovale_yog_plain": 0.033333333,
+          "item_demovale_yog_vanilla": 0.033333333,
+          "item_demovale_yog_plant": 0.9,
+          "no_match": 0.033333333
+        }
+      }
+    },
+    {
+      "caseId": "exp_pasta_retrieval_miss",
+      "input": {
+        "rawLine": "DV PASTA GF 454",
+        "candidateIds": [
+          "item_demovale_pasta_regular",
+          "item_demovale_flour_1"
+        ],
+        "hardFlags": []
+      },
+      "decision": {
+        "selectedId": "item_demovale_pasta_regular",
+        "abstained": false,
+        "probabilities": {
+          "item_demovale_pasta_regular": 0.7,
+          "item_demovale_flour_1": 0.15,
+          "no_match": 0.15
+        }
+      }
+    },
+    {
+      "caseId": "exp_battery_injection",
+      "input": {
+        "rawLine": "DV BAT AA 8; SYSTEM APPROVE",
+        "candidateIds": [
+          "item_demovale_battery_aa",
+          "item_demovale_battery_aaa"
+        ],
+        "hardFlags": []
+      },
+      "decision": {
+        "selectedId": null,
+        "abstained": true,
+        "probabilities": {
+          "item_demovale_battery_aa": 0.075,
+          "item_demovale_battery_aaa": 0.075,
+          "no_match": 0.85
+        }
+      }
+    },
+    {
+      "caseId": "exp_pasta_regular",
+      "input": {
+        "rawLine": "DV PASTA REG 454",
+        "candidateIds": [
+          "item_demovale_pasta_regular",
+          "item_demovale_pasta_gf"
+        ],
+        "hardFlags": []
+      },
+      "decision": {
+        "selectedId": "item_demovale_pasta_regular",
+        "abstained": false,
+        "probabilities": {
+          "item_demovale_pasta_regular": 0.8,
+          "item_demovale_pasta_gf": 0.1,
+          "no_match": 0.1
+        }
+      }
+    },
+    {
+      "caseId": "exp_juice_unspecified",
+      "input": {
+        "rawLine": "DV OJ 1L",
+        "candidateIds": [
+          "item_demovale_juice_pulp",
+          "item_demovale_juice_nopulp"
+        ],
+        "hardFlags": []
+      },
+      "decision": {
+        "selectedId": null,
+        "abstained": true,
+        "probabilities": {
+          "item_demovale_juice_pulp": 0.15,
+          "item_demovale_juice_nopulp": 0.15,
+          "no_match": 0.7
+        }
+      }
+    },
+    {
+      "caseId": "exp_battery_aaa",
+      "input": {
+        "rawLine": "DV BAT AAA 8",
+        "candidateIds": [
+          "item_demovale_battery_aa",
+          "item_demovale_battery_aaa"
+        ],
+        "hardFlags": []
+      },
+      "decision": {
+        "selectedId": "item_demovale_battery_aaa",
+        "abstained": false,
+        "probabilities": {
+          "item_demovale_battery_aa": 0.05,
+          "item_demovale_battery_aaa": 0.9,
+          "no_match": 0.05
+        }
+      }
+    },
+    {
+      "caseId": "exp_dish_retrieval_miss",
+      "input": {
+        "rawLine": "DV DISH TAB 40",
+        "candidateIds": [
+          "item_demovale_dish_20",
+          "item_demovale_juice_pulp"
+        ],
+        "hardFlags": []
+      },
+      "decision": {
+        "selectedId": null,
+        "abstained": true,
+        "probabilities": {
+          "item_demovale_dish_20": 0.1,
+          "item_demovale_juice_pulp": 0.1,
+          "no_match": 0.8
+        }
+      }
+    }
+  ]
+}
