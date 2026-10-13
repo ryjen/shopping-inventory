@@ -86,26 +86,51 @@ export function exactAliasBaseline(item, catalogById) {
   };
 }
 
-function summarize(rows) {
+function summarizeDecisions(rows, decisionKey) {
   const total = rows.length;
-  const resolved = rows.filter((row) => row.selectedId !== null).length;
+  const resolved = rows.filter((row) => row[decisionKey] !== null).length;
   const correctSelected = rows.filter((row) =>
-    row.selectedId !== null && row.selectedId === row.expectedId).length;
+    row[decisionKey] !== null && row[decisionKey] === row.expectedId).length;
   const falseMatches = rows.filter((row) =>
-    row.selectedId !== null && row.selectedId !== row.expectedId).length;
+    row[decisionKey] !== null && row[decisionKey] !== row.expectedId).length;
   const missedMatches = rows.filter((row) =>
-    row.selectedId === null && row.expectedId !== null).length;
+    row[decisionKey] === null && row.expectedId !== null).length;
   const correctAbstentions = rows.filter((row) =>
-    row.selectedId === null && row.expectedId === null).length;
-  const knownTargets = rows.filter((row) => row.expectedId !== null).length;
-  const retrievableTargets = rows.filter((row) => row.expectedId !== null && row.retrievable).length;
+    row[decisionKey] === null && row.expectedId === null).length;
   return {
     total, resolved, correctSelected, falseMatches, missedMatches, correctAbstentions,
-    knownTargets, retrievableTargets, retrievalMisses: knownTargets - retrievableTargets,
-    shortlistRecall: knownTargets ? retrievableTargets / knownTargets : null,
     coverage: total ? resolved / total : null,
     selectivePrecision: resolved ? correctSelected / resolved : null,
     selectiveRisk: resolved ? falseMatches / resolved : null,
+    decisionAccuracy: total ? (correctSelected + correctAbstentions) / total : null,
+  };
+}
+
+function summarize(rows) {
+  const knownTargets = rows.filter((row) => row.expectedId !== null).length;
+  const retrievableTargets = rows.filter((row) => row.expectedId !== null && row.retrievable).length;
+  const unreachable = rows.filter((row) => row.expectedId !== null && !row.retrievable);
+  // Selection performance cannot be measured against gold absent from the shortlist.
+  // Keep mandatory policy vetoes outside the independent model-selection denominator.
+  const eligibleSelection = rows.filter((row) =>
+    !row.hardVeto && (row.expectedId === null || row.retrievable));
+  return {
+    ...summarizeDecisions(rows, "selectedId"), // end-to-end outcome, including vetoes and retrieval misses
+    knownTargets,
+    retrievableTargets,
+    retrievalMisses: knownTargets - retrievableTargets,
+    shortlistRecall: knownTargets ? retrievableTargets / knownTargets : null,
+    conditionalSelection: {
+      ...summarizeDecisions(eligibleSelection, "proposedId"),
+      excludedRetrievalMisses: unreachable.length,
+      excludedPolicyVetoes: rows.filter((row) =>
+        row.hardVeto && (row.expectedId === null || row.retrievable)).length,
+    },
+    unreachableSelection: {
+      total: unreachable.length,
+      abstentions: unreachable.filter((row) => row.proposedId === null).length,
+      falseSelections: unreachable.filter((row) => row.proposedId !== null).length,
+    },
   };
 }
 
@@ -127,7 +152,8 @@ export function evaluateSemanticCases(cases, catalog, decide = exactAliasBaselin
     // A provider suggestion may never bypass a deterministic hard-policy veto.
     const selectedId = item.hardFlags.length ? null : proposal.selectedId;
     rows.push({
-      cohort: item.cohort, split: item.split, selectedId, expectedId: item.expectedId,
+      cohort: item.cohort, split: item.split, selectedId, proposedId: proposal.selectedId,
+      expectedId: item.expectedId, hardVeto: item.hardFlags.length > 0,
       retrievable: item.expectedId !== null && item.candidateIds.includes(item.expectedId),
     });
   }
