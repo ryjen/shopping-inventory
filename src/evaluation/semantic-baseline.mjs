@@ -33,8 +33,9 @@ export function validateCase(item, catalogById) {
   if (!Array.isArray(item.candidateIds) || item.candidateIds.length === 0) fail("empty candidate shortlist");
   if (new Set(item.candidateIds).size !== item.candidateIds.length ||
       item.candidateIds.some((id) => typeof id !== "string" || !catalogById.has(id))) fail("unknown/duplicate candidate ID");
-  if (item.expectedId !== null && !item.candidateIds.includes(item.expectedId)) {
-    fail("expected ID must be null or in the candidate shortlist");
+  // Gold truth is independent of retrieval. The candidate shortlist may miss it.
+  if (item.expectedId !== null && !catalogById.has(item.expectedId)) {
+    fail("expected ID must be null or in the canonical catalog");
   }
   if (!Array.isArray(item.hardFlags) ||
       item.hardFlags.some((flag) => typeof flag !== "string" || !flag.trim())) fail("invalid hard-policy flags");
@@ -96,8 +97,12 @@ function summarize(rows) {
     row.selectedId === null && row.expectedId !== null).length;
   const correctAbstentions = rows.filter((row) =>
     row.selectedId === null && row.expectedId === null).length;
+  const knownTargets = rows.filter((row) => row.expectedId !== null).length;
+  const retrievableTargets = rows.filter((row) => row.expectedId !== null && row.retrievable).length;
   return {
     total, resolved, correctSelected, falseMatches, missedMatches, correctAbstentions,
+    knownTargets, retrievableTargets, retrievalMisses: knownTargets - retrievableTargets,
+    shortlistRecall: knownTargets ? retrievableTargets / knownTargets : null,
     coverage: total ? resolved / total : null,
     selectivePrecision: resolved ? correctSelected / resolved : null,
     selectiveRisk: resolved ? falseMatches / resolved : null,
@@ -121,7 +126,10 @@ export function evaluateSemanticCases(cases, catalog, decide = exactAliasBaselin
     }
     // A provider suggestion may never bypass a deterministic hard-policy veto.
     const selectedId = item.hardFlags.length ? null : proposal.selectedId;
-    rows.push({ cohort: item.cohort, split: item.split, selectedId, expectedId: item.expectedId });
+    rows.push({
+      cohort: item.cohort, split: item.split, selectedId, expectedId: item.expectedId,
+      retrievable: item.expectedId !== null && item.candidateIds.includes(item.expectedId),
+    });
   }
   const cohorts = [...new Set(rows.map((row) => row.cohort))].sort();
   const splits = [...SPLITS];
