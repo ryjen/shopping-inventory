@@ -49,6 +49,7 @@ test('n8n workflow exports are valid and structurally connected', async () => {
 
   for (const file of files) {
     const { workflow } = await readWorkflow(file);
+    assert.match(workflow.id, /^synthetic_[a-z0-9_]+$/, `${file}: stable synthetic workflow ID required for pinned n8n import`);
     assert.equal(typeof workflow.name, 'string', `${file}: workflow name is required`);
     assert.ok(Array.isArray(workflow.nodes), `${file}: nodes must be an array`);
     assert.ok(workflow.nodes.length > 0, `${file}: nodes must not be empty`);
@@ -185,6 +186,98 @@ test('raw row builders emit required schema fields by convention', async () => {
       }
     }
   }
+});
+
+const ALLOWED_SHEET_DOCUMENT_EXPR = "={{ $('Configuration').first().json.spreadsheetId }}";
+
+function assertPlaceholderOnlyWorkflowResources(workflow, file = 'synthetic-export') {
+  for (const node of workflow.nodes ?? []) {
+    for (const credential of Object.values(node.credentials ?? {})) {
+      assert.equal(credential?.id, 'TODO', `${file}: credential id on ${node.name} must remain a placeholder`);
+      assert.match(String(credential?.name ?? ''), /^TODO\b/,
+        `${file}: credential name on ${node.name} must remain a placeholder`);
+    }
+
+    if (node.type !== 'n8n-nodes-base.googleSheets') continue;
+    // Check the actual input consumed by n8n, not only a Configuration assignment.
+    // Expressions other than the exact approved reference are not equivalent to a placeholder.
+    const documentId = node.parameters?.documentId;
+    assert.deepEqual(Object.keys(documentId ?? {}).sort(), ['__rl', 'mode', 'value'].sort(),
+      `${file}: ${node.name} must not export cached or unknown document locator metadata`);
+    assert.equal(documentId?.__rl, true, `${file}: ${node.name} requires a resource locator`);
+    assert.equal(documentId?.mode, 'id', `${file}: ${node.name} must resolve the configured spreadsheet ID`);
+    assert.equal(documentId?.value, ALLOWED_SHEET_DOCUMENT_EXPR,
+      `${file}: ${node.name} may only reference Configuration.spreadsheetId`);
+
+    const sheetNames = new Map([
+      ['Append Orders_Raw', "={{ $('Configuration').first().json.ordersSheetName }}"],
+      ['Append Deals_Raw', "={{ $('Configuration').first().json.dealsSheetName }}"],
+    ]);
+    assert.ok(sheetNames.has(node.name), `${file}: unreviewed Sheets node ${node.name}`);
+    const sheetName = node.parameters?.sheetName;
+    assert.deepEqual(Object.keys(sheetName ?? {}).sort(), ['__rl', 'mode', 'value'].sort(),
+      `${file}: ${node.name} must not export cached or unknown sheet locator metadata`);
+    assert.equal(sheetName?.__rl, true, `${file}: ${node.name} requires a sheet locator`);
+    assert.equal(sheetName?.mode, 'name', `${file}: ${node.name} must resolve the configured sheet name`);
+    assert.equal(sheetName?.value, sheetNames.get(node.name),
+      `${file}: ${node.name} must use the explicitly approved sheet reference`);
+  }
+
+  const configuration = workflow.nodes.find((node) => node.name === 'Configuration');
+  assert.ok(configuration, `${file}: Configuration node is required`);
+  const assignments = configuration.parameters?.assignments?.assignments ?? [];
+  const spreadsheetIds = assignments.filter((item) => item.name === 'spreadsheetId');
+  assert.equal(spreadsheetIds.length, 1, `${file}: exactly one spreadsheetId assignment required`);
+  assert.equal(spreadsheetIds[0]?.value, 'TODO_GOOGLE_SHEET_ID',
+    `${file}: spreadsheetId must remain a public placeholder`);
+}
+
+test('workflow exports contain placeholder-only credentials and actual resource locators', async () => {
+  for (const file of await workflowFiles()) {
+    const { workflow } = await readWorkflow(file);
+    assertPlaceholderOnlyWorkflowResources(workflow, file);
+  }
+});
+
+test('literal, indirect and spoofed Sheets document locators are rejected', async () => {
+  const files = await workflowFiles();
+  const { workflow } = await readWorkflow(files[0]);
+  const sheetsNode = workflow.nodes.find((node) => node.type === 'n8n-nodes-base.googleSheets');
+  assert.ok(sheetsNode, 'synthetic fixture must contain a Sheets node');
+  const index = workflow.nodes.indexOf(sheetsNode);
+
+  for (const injected of [
+    { __rl: true, mode: 'id', value: 'synthetic_unapproved_sheet_id' },
+    { __rl: true, mode: 'id', value: "={{ $('Other').first().json.spreadsheetId }}" },
+    { __rl: true, mode: 'id', value: '={{ $env.SHEET_ID }}' },
+    { __rl: true, mode: 'url', value: 'TODO_GOOGLE_SHEET_ID' },
+    'TODO_GOOGLE_SHEET_ID',
+  ]) {
+    const changed = structuredClone(workflow);
+    changed.nodes[index].parameters.documentId = injected;
+    assert.throws(() => assertPlaceholderOnlyWorkflowResources(changed),
+      'invalid document locator must fail before publication');
+  }
+
+  for (const [locator, field] of [
+    ['documentId', 'cachedResultUrl'],
+    ['documentId', 'cachedResultName'],
+    ['sheetName', 'cachedResultUrl'],
+    ['sheetName', 'cachedResultName'],
+    ['sheetName', 'unexpectedMetadata'],
+  ]) {
+    const changed = structuredClone(workflow);
+    changed.nodes[index].parameters[locator][field] =
+      'https://docs.google.com/spreadsheets/d/synthetic-unapproved-locator/edit';
+    assert.throws(() => assertPlaceholderOnlyWorkflowResources(changed),
+      `cached or unrecognized ${locator}.${field} must fail publication`);
+  }
+
+  const changed = structuredClone(workflow);
+  changed.nodes.find((node) => node.name === 'Configuration')
+    .parameters.assignments.assignments.find((item) => item.name === 'spreadsheetId')
+    .value = 'synthetic_unapproved_sheet_id';
+  assert.throws(() => assertPlaceholderOnlyWorkflowResources(changed));
 });
 
 test('workflow exports do not contain real credential material', async () => {
