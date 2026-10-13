@@ -106,7 +106,7 @@ Do not use a real receipt copied and redacted. Invent names, baskets, identifier
 4. **Jev:** opt-in hosted trial, synthetic inputs only.
 5. **Generative model:** only if required to establish a useful comparator; bound output to same candidate set.
 
-Use identical candidate shortlists and case splits when comparing selection models. **Gold truth must remain independent of retrieval:** a known catalog item may be absent from `candidateIds`. Score this as a retrieval miss, not as an invalid fixture, and prohibit any provider from selecting an ID outside the supplied shortlist. Measure retrieval recall separately from selective precision, including held-out cases where the correct item was not retrieved; otherwise poor shortlist coverage can be misattributed to the model.
+Use identical candidate shortlists and case splits when comparing selection models. **Gold truth must remain independent of retrieval:** a known catalog item may be absent from `candidateIds`. Score this as a retrieval miss, not as an invalid fixture, and prohibit any provider from selecting an ID outside the supplied shortlist. Measure retrieval recall separately from selective precision, including held-out cases where the correct item was not retrieved; otherwise poor shortlist coverage can be misattributed to the model. Use **separate outcome metrics**: end-to-end scores include retrieval failures and mandatory policy vetoes, conditional selection scores include only cases where gold is retrievable (or genuinely no-match) and exclude policy vetoes, and unreachable-shortlist diagnostics count provider abstentions versus false selections. A correct abstention on unreachable gold must not be scored as a selection-stage miss.
 
 ## Metrics and decision gates
 
