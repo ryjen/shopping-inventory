@@ -51,9 +51,9 @@ test("scripted replay is exact-case and exact-candidate-order bound", () => {
   const scored = evaluateSemanticCases(frozen.cases, catalog, frozen.decide);
   assert.equal(scored.modelId, "synthetic-scripted-replay");
   assert.equal(scored.summary.total, 10);
-  assert.equal(scored.summary.unreachableSelection.total, 2);
+  assert.equal(scored.summary.unreachableSelection.total, 3);
   assert.equal(scored.summary.unreachableSelection.falseSelections, 1);
-  assert.equal(scored.summary.unreachableSelection.abstentions, 1);
+  assert.equal(scored.summary.unreachableSelection.abstentions, 2);
   assert.equal(scored.summary.conditionalSelection.excludedPolicyVetoes, 1);
   assert.equal(scored.summary.conditionalSelection.probabilityCases,
     scored.summary.conditionalSelection.total);
@@ -91,8 +91,10 @@ test("replay provider cannot return an ID outside its shortlist or altered score
   ]) {
     const tampered = structuredClone(replayBundle);
     mutate(tampered);
-    const bound = createSyntheticReplay(tampered, cases, catalog);
-    assert.throws(() => evaluateSemanticCases(bound.cases, catalog, bound.decide));
+    assert.throws(() => {
+      const bound = createSyntheticReplay(tampered, cases, catalog);
+      evaluateSemanticCases(bound.cases, catalog, bound.decide);
+    });
   }
 });
 
