@@ -49,6 +49,7 @@ test('n8n workflow exports are valid and structurally connected', async () => {
 
   for (const file of files) {
     const { workflow } = await readWorkflow(file);
+    assert.match(workflow.id, /^synthetic_[a-z0-9_]+$/, `${file}: stable synthetic workflow ID required for pinned n8n import`);
     assert.equal(typeof workflow.name, 'string', `${file}: workflow name is required`);
     assert.ok(Array.isArray(workflow.nodes), `${file}: nodes must be an array`);
     assert.ok(workflow.nodes.length > 0, `${file}: nodes must not be empty`);
