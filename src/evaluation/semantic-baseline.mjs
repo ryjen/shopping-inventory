@@ -29,6 +29,7 @@ export function validateCase(item, catalogById) {
   if (!item || item.synthetic !== true) fail("case must be explicitly synthetic");
   if (typeof item.caseId !== "string" || !/^[a-z][a-z0-9_]*$/.test(item.caseId)) fail("invalid case ID");
   if (!SPLITS.has(item.split) || typeof item.cohort !== "string" || !item.cohort) fail("invalid split or cohort");
+  if (typeof item.familyId !== "string" || !/^[a-z][a-z_]*$/.test(item.familyId)) fail("invalid family ID");
   if (typeof item.rawLine !== "string" || !item.rawLine.trim()) fail("invalid raw line");
   if (!Array.isArray(item.candidateIds) || item.candidateIds.length === 0) fail("empty candidate shortlist");
   if (new Set(item.candidateIds).size !== item.candidateIds.length ||
