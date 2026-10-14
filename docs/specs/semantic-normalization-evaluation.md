@@ -101,11 +101,12 @@ Do not use a real receipt copied and redacted. Invent names, baskets, identifier
 
 ## Baselines and experiments
 
-1. **Rules-only:** existing normalization + conservative review.
-2. **Rules + lexical retrieval:** optional lightweight fuzzy/TF-IDF matcher, if not already represented in baseline.
-3. **Local contender:** a small classifier or embedding similarity ranker if it fits the implementation budget.
-4. **Jev:** opt-in hosted trial, synthetic inputs only.
-5. **Generative model:** only if required to establish a useful comparator; bound output to same candidate set.
+1. **Rules-only:** existing normalization + conservative review. The executable offline reference is exact catalog aliases, not all production normalization functionality.
+2. **Deterministic lexical contender (implemented offline):** a dependency-free character-trigram Dice matcher with fixed score threshold 0.88 and best-versus-second margin 0.10, always subject to shortlist and hard-policy vetoes. These heuristic parameters were fixed before comparing v3 held-out results; they are **not learned model weights**. Run `npm run eval:semantic -- --lexical` for side-by-side aggregate metrics on the same 100-case partition. A worse result is a reason to reject the added heuristic, not adjust its thresholds using held-out labels.
+3. **Candidate retrieval:** optional future lexical/TF-IDF shortlist generator with independently scored recall. The implemented lexical contender only selects **within the fixed shortlist**, so it is not a retrieval benchmark.
+4. **Local contender:** a small classifier or embedding similarity ranker if it fits the implementation budget.
+5. **Jev:** opt-in hosted trial, synthetic inputs only.
+6. **Generative model:** only if required to establish a useful comparator; bound output to same candidate set.
 
 Use identical candidate shortlists and case splits when comparing selection models. **Gold truth must remain independent of retrieval:** a known catalog item may be absent from `candidateIds`. Score this as a retrieval miss, not as an invalid fixture, and prohibit any provider from selecting an ID outside the supplied shortlist. Measure retrieval recall separately from selective precision, including held-out cases where the correct item was not retrieved; otherwise poor shortlist coverage can be misattributed to the model. Use **separate outcome metrics**: end-to-end scores include retrieval failures and mandatory policy vetoes, conditional selection scores include only cases where gold is retrievable (or genuinely no-match) and exclude policy vetoes, and unreachable-shortlist diagnostics count provider abstentions versus false selections. A correct abstention on unreachable gold must not be scored as a selection-stage miss.
 
