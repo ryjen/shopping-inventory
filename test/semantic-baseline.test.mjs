@@ -25,8 +25,8 @@ test("synthetic benchmark cases are valid, unique, and split explicitly", () => 
   assert.equal(new Set(cases.map((item) => item.caseId)).size, cases.length);
   for (const item of cases) validateCase(item, ids);
   const report = evaluateSemanticCases(cases, catalog);
-  assert.equal(report.bySplit.development.total, 8);
-  assert.equal(report.bySplit.validation.total, 4);
+  assert.equal(report.bySplit.development.total, 6);
+  assert.equal(report.bySplit.validation.total, 6);
   assert.equal(report.bySplit.test.total, 7);
 });
 

@@ -51,6 +51,7 @@ type EvaluationCase = {
   caseId: string;              // invented, stable synthetic ID
   synthetic: true;
   rawLine: string;             // invented, not derived by redaction
+  familyId: string;            // stable case family, used to enforce split separation
   parsedQuantity?: string;
   candidateIds: string[];      // deterministic ordered shortlist
   expectedId: string | null;   // independent gold truth: null = no_match/unknown; non-null may be absent from candidateIds
@@ -91,12 +92,12 @@ Do not use a real receipt copied and redacted. Invent names, baskets, identifier
 
 ### Split and leakage controls
 
-- Freeze gold labels and held-out cases **before** tuning thresholds, prompts or candidate generation.
-- Split by canonical item family/alias template where feasible, not merely by randomized rows, to avoid near-duplicate leakage.
+- Freeze gold labels and held-out cases **before** tuning thresholds, prompts or candidate generation. Version 2 freezes the complete 17-case test snapshot (text, gold, candidate order, hard flags, family and split) in `evaluation/fixtures/semantic-split-v2.synthetic.json`. Any change requires an explicitly reviewed new benchmark version; never silently update the snapshot to make a failing check green.
+- Group all cases by declared `familyId` and compare it against a complete catalog-ID→family map; fail if a family appears in more than one split, or identical normalized line text crosses splits. The 50-case version 2 partition includes **held-out case families**, not held-out/unseen catalog IDs: the full public catalog and shortlists remain visible across splits, and cross-family distractors can appear as candidates.
 - Evaluate at least two candidate orders for Jev (and any order-sensitive provider); randomization must be seeded and recorded.
 - Do not optimize on the test split. Keep tuning/validation/test partitions separate; if the corpus is too small, report that limitation.
 - Record fixture/spec revisions and deterministic normalization commit hash.
-- A starting target is at least 100 materially synthetic, diverse cases, with the cohort breakdown explicitly reported. The current 50-case corpus covers six additional invented product families, including family-grouped development/validation/test assignments, but is **not** statistical proof of production safety. Existing original cases are not family-disjoint; future coverage must audit split leakage before claiming generalization.
+- A starting target is at least 100 materially synthetic, diverse cases. The current 50-case **v2 partition** is grouped across ten case families: 17 development, 16 validation and 17 test. The original 19 cases have been reassigned into non-overlapping family groups. These small, invented groups do **not** constitute statistical evidence of production accuracy.
 
 ## Baselines and experiments
 
@@ -136,7 +137,7 @@ Prefer a **risk–coverage curve** rather than a single confidence threshold. Se
 
 ## Reproducibility, deliverables, and close criteria
 
-`npm run eval:semantic` runs the current offline deterministic baseline over the synthetic corpus. `npm run eval:semantic -- --replay` runs a **scripted synthetic test double** with strict case/candidate-order binding and compares it against exact-alias decisions on the same ten cases. It does not invoke Jev, a local model, or a real inference provider; its invented probabilities only validate mechanical Brier scoring. Report output is aggregate JSON without raw text or identifiers from the fixture. No live benchmark execution is authorized by this command.
+`npm run eval:semantic` first validates the version 2 manifest and frozen held-out snapshot, then runs the current offline deterministic baseline over the synthetic corpus. `npm run eval:semantic -- --replay` runs a **scripted synthetic test double** with strict case/candidate-order binding and compares it against exact-alias decisions on the same ten cases. It does not invoke Jev, a local model, or a real inference provider; its invented probabilities only validate mechanical Brier scoring. Report output is aggregate JSON without raw text or identifiers from the fixture. No live benchmark execution is authorized by this command.
 
 Deliver:
 1. Versioned synthetic evaluation cases, expected IDs, splits and taxonomy, aligned with #4.
