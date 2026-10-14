@@ -2,6 +2,7 @@
 
 import { readFile } from "node:fs/promises";
 import { evaluateSemanticCases } from "../src/evaluation/semantic-baseline.mjs";
+import { lexicalDiceBaseline, LEXICAL_CONFIG } from "../src/evaluation/lexical-baseline.mjs";
 import { createSyntheticReplay } from "../src/evaluation/semantic-replay.mjs";
 import { validateSemanticPartitionEvolution } from "../src/evaluation/semantic-partition.mjs";
 
@@ -24,8 +25,8 @@ const partition = validateSemanticPartitionEvolution(
   parentCases, parentCatalog, parentManifest, cases, catalog, manifest,
 );
 const args = process.argv.slice(2);
-if (args.length > 1 || (args.length === 1 && args[0] !== "--replay")) {
-  throw new TypeError("usage: npm run eval:semantic [-- --replay]");
+if (args.length > 1 || (args.length === 1 && !["--replay", "--lexical"].includes(args[0]))) {
+  throw new TypeError("usage: npm run eval:semantic [-- --replay|--lexical]");
 }
 
 let report;
@@ -40,6 +41,15 @@ if (args[0] === "--replay") {
     comparedCases: replay.cases.length,
     exactAlias: evaluateSemanticCases(replay.cases, catalog),
     scripted: evaluateSemanticCases(replay.cases, catalog, replay.decide),
+  };
+} else if (args[0] === "--lexical") {
+  report = {
+    mode: "offline-deterministic-lexical-comparison",
+    warning: "Lexical string similarity only, not a trained model, local LLM, Jev inference, calibration or production accuracy evidence.",
+    partition,
+    configuration: LEXICAL_CONFIG,
+    exactAlias: evaluateSemanticCases(cases, catalog),
+    lexical: evaluateSemanticCases(cases, catalog, lexicalDiceBaseline),
   };
 } else {
   report = { ...evaluateSemanticCases(cases, catalog), partition };
