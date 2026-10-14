@@ -3,6 +3,7 @@
 import { readFile } from "node:fs/promises";
 import { evaluateSemanticCases } from "../src/evaluation/semantic-baseline.mjs";
 import { createSyntheticReplay } from "../src/evaluation/semantic-replay.mjs";
+import { validateSemanticPartition } from "../src/evaluation/semantic-partition.mjs";
 
 const base = new URL("../evaluation/fixtures/", import.meta.url);
 const catalog = JSON.parse(await readFile(new URL("semantic-catalog.synthetic.json", base), "utf8"));
