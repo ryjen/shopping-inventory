@@ -68,7 +68,7 @@ export function validateSemanticPartition(cases, catalog, manifest) {
     if (!item.candidateIds.some((id) => itemFamily[id] === item.familyId)) {
       fail("case has no candidate belonging to its declared family");
     }
-    const normalized = item.rawLine.normalize("NFKC").trim().replace(/\\s+/g, " ").toLocaleLowerCase("en");
+    const normalized = item.rawLine.normalize("NFKC").trim().replace(/\s+/g, " ").toLocaleLowerCase("en");
     const previous = seenRawText.get(normalized);
     if (previous && previous !== item.split) fail("same input text crosses split boundary");
     seenRawText.set(normalized, item.split);
