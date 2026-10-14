@@ -26,7 +26,7 @@ function sortById(rows) {
 }
 
 export function validateSemanticPartition(cases, catalog, manifest) {
-  if (!manifest || manifest.synthetic !== true || manifest.schemaVersion !== 2 ||
+  if (!manifest || manifest.synthetic !== true || ![2, 3].includes(manifest.schemaVersion) ||
       manifest.partitionKind !== "case-family-disjoint" ||
       !record(manifest.familySplits) || !record(manifest.catalogItemFamilies) ||
       !Array.isArray(manifest.frozenTestCases)) {
@@ -94,5 +94,52 @@ export function validateSemanticPartition(cases, catalog, manifest) {
     splitCounts,
     familyCounts,
     frozenTestCases: actualTest.length,
+  };
+}
+
+
+// No v2 test case can silently disappear or change in the extended v3 study.
+// The original v2 catalog remains a separate immutable benchmark input.
+export function validateSemanticPartitionEvolution(
+  parentCases, parentCatalog, parentManifest,
+  currentCases, currentCatalog, currentManifest,
+) {
+  const parent = validateSemanticPartition(parentCases, parentCatalog, parentManifest);
+  const current = validateSemanticPartition(currentCases, currentCatalog, currentManifest);
+  if (parent.schemaVersion !== 2 || current.schemaVersion !== 3 ||
+      currentManifest.parentManifest !== "semantic-split-v2.synthetic.json") {
+    fail("v3 must explicitly extend the declared v2 benchmark");
+  }
+  if (current.cases <= parent.cases || current.catalogItems <= parent.catalogItems ||
+      current.frozenTestCases < parent.frozenTestCases) {
+    fail("v3 must extend, not shrink, the v2 corpus");
+  }
+  const currentByCase = new Map(currentCases.map((item) => [item.caseId, item]));
+  for (const item of parentCases) {
+    if (!same(item, currentByCase.get(item.caseId))) {
+      fail("v2 case changed or was dropped in v3");
+    }
+  }
+  const currentByItem = new Map(currentCatalog.items.map((item) => [item.id, item]));
+  for (const item of parentCatalog.items) {
+    if (!same(item, currentByItem.get(item.id))) {
+      fail("v2 catalog identity changed or was dropped in v3");
+    }
+  }
+  for (const [family, split] of Object.entries(parentManifest.familySplits)) {
+    if (currentManifest.familySplits[family] !== split) {
+      fail("v2 family was reassigned in v3");
+    }
+  }
+  for (const [id, family] of Object.entries(parentManifest.catalogItemFamilies)) {
+    if (currentManifest.catalogItemFamilies[id] !== family) {
+      fail("v2 catalog item changed family in v3");
+    }
+  }
+  return {
+    ...current,
+    parentVersion: parent.schemaVersion,
+    parentCases: parent.cases,
+    parentFrozenTestCases: parent.frozenTestCases,
   };
 }
