@@ -39,8 +39,8 @@ test("expanded synthetic corpus has distinct product families and split separati
   assert.equal(report.summary.falseMatches, 0);
   assert.equal(report.summary.retrievalMisses, 3);
   assert.equal(report.bySplit.test.total, 17);
-  assert.equal(report.bySplit.development.total, 19);
-  assert.equal(report.bySplit.validation.total, 14);
+  assert.equal(report.bySplit.development.total, 17);
+  assert.equal(report.bySplit.validation.total, 16);
   assert.equal(report.summary.conditionalSelection.probabilityCases, 0);
   assert.equal(report.summary.conditionalSelection.meanBrier, null);
 });
