@@ -13,6 +13,8 @@ const cases = [
   ...await loadJsonl("semantic-items.synthetic.jsonl"),
   ...await loadJsonl("semantic-expansion.synthetic.jsonl"),
 ];
+const manifest = JSON.parse(await readFile(new URL("semantic-split-v2.synthetic.json", base), "utf8"));
+const partition = validateSemanticPartition(cases, catalog, manifest);
 const args = process.argv.slice(2);
 if (args.length > 1 || (args.length === 1 && args[0] !== "--replay")) {
   throw new TypeError("usage: npm run eval:semantic [-- --replay]");
@@ -24,6 +26,7 @@ if (args[0] === "--replay") {
   const replay = createSyntheticReplay(bundle, cases, catalog);
   report = {
     mode: "synthetic-scripted-test-double",
+    partition,
     warning: "Invented scripted predictions for harness verification only; no Jev/local model was run.",
     availableCases: cases.length,
     comparedCases: replay.cases.length,
@@ -31,7 +34,7 @@ if (args[0] === "--replay") {
     scripted: evaluateSemanticCases(replay.cases, catalog, replay.decide),
   };
 } else {
-  report = evaluateSemanticCases(cases, catalog);
+  report = { ...evaluateSemanticCases(cases, catalog), partition };
 }
 
 // Intentionally aggregated and source-payload-free output; no model calls or private data.
