@@ -92,12 +92,12 @@ Do not use a real receipt copied and redacted. Invent names, baskets, identifier
 
 ### Split and leakage controls
 
-- Freeze gold labels and held-out cases **before** tuning thresholds, prompts or candidate generation. Version 2 freezes the complete 17-case test snapshot (text, gold, candidate order, hard flags, family and split) in `evaluation/fixtures/semantic-split-v2.synthetic.json`. Any change requires an explicitly reviewed new benchmark version; never silently update the snapshot to make a failing check green.
+- Freeze gold labels and held-out cases **before** tuning thresholds, prompts or candidate generation. The immutable v2 manifest remains in `semantic-split-v2.synthetic.json`. The additive v3 manifest `semantic-split-v3.synthetic.json` extends it and freezes 37 test cases including the original 17. Before v3 scoring, the harness independently validates both manifests, verifies that all 50 v2 cases and all 22 original catalog identities survive unchanged, and rejects family reassignment. Never silently update a snapshot to make a failing check green.
 - Group all cases by declared `familyId` and compare it against a complete catalog-ID→family map; fail if a family appears in more than one split, or identical normalized line text crosses splits. The 50-case version 2 partition includes **held-out case families**, not held-out/unseen catalog IDs: the full public catalog and shortlists remain visible across splits, and cross-family distractors can appear as candidates.
 - Evaluate at least two candidate orders for Jev (and any order-sensitive provider); randomization must be seeded and recorded.
 - Do not optimize on the test split. Keep tuning/validation/test partitions separate; if the corpus is too small, report that limitation.
 - Record fixture/spec revisions and deterministic normalization commit hash.
-- A starting target is at least 100 materially synthetic, diverse cases. The current 50-case **v2 partition** is grouped across ten case families: 17 development, 16 validation and 17 test. The original 19 cases have been reassigned into non-overlapping family groups. These small, invented groups do **not** constitute statistical evidence of production accuracy.
+- The **v3 corpus now contains 100 materially invented identity-matching cases** across 15 non-overlapping case families (37 development, 26 validation, 37 held-out test) and 37 catalog variants. Five new families cover roast/grind, rice variety and size, soup sodium/flavor, cereal flavor/package sizes, and laundry scent/volume. The 50-case v2 study is preserved as a separate 22-item catalog, with its full original case corpus and 17 frozen test cases checked before v3 evaluation. The v3 manifest also freezes the 37-case held-out snapshot. These invented examples are not statistical evidence of production accuracy.
 
 ## Baselines and experiments
 
@@ -137,7 +137,7 @@ Prefer a **risk–coverage curve** rather than a single confidence threshold. Se
 
 ## Reproducibility, deliverables, and close criteria
 
-`npm run eval:semantic` first validates the version 2 manifest and frozen held-out snapshot, then runs the current offline deterministic baseline over the synthetic corpus. `npm run eval:semantic -- --replay` runs a **scripted synthetic test double** with strict case/candidate-order binding and compares it against exact-alias decisions on the same ten cases. It does not invoke Jev, a local model, or a real inference provider; its invented probabilities only validate mechanical Brier scoring. Report output is aggregate JSON without raw text or identifiers from the fixture. No live benchmark execution is authorized by this command.
+`npm run eval:semantic` validates the historical v2 50-case study and v3 100-case family-disjoint extension before running offline deterministic identity-matching baselines. Version-specific split metrics must not be compared without acknowledging that v3 adds five new families and changes the held-out test denominator. `npm run eval:semantic -- --replay` runs a **scripted synthetic test double** with strict case/candidate-order binding and compares it against exact-alias decisions on the same ten cases. It does not invoke Jev, a local model, or a real inference provider; its invented probabilities only validate mechanical Brier scoring. Report output is aggregate JSON without raw text or identifiers from the fixture. No live benchmark execution is authorized by this command.
 
 Deliver:
 1. Versioned synthetic evaluation cases, expected IDs, splits and taxonomy, aligned with #4.
