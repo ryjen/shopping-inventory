@@ -91,10 +91,11 @@ test("CLI evaluates only after manifest validation, exposing aggregate partition
   const script = new URL("../scripts/eval-semantic.mjs", import.meta.url).pathname;
   const report = JSON.parse(execFileSync(process.execPath, [script], { encoding: "utf8" }));
   const replay = JSON.parse(execFileSync(process.execPath, [script, "--replay"], { encoding: "utf8" }));
-  assert.deepEqual(report.partition.splitCounts, { development: 17, validation: 16, test: 17 });
-  assert.equal(report.partition.frozenTestCases, 17);
+  assert.deepEqual(report.partition.splitCounts, { development: 37, validation: 26, test: 37 });
+  assert.equal(report.partition.frozenTestCases, 37);
+  assert.equal(report.partition.parentFrozenTestCases, 17);
   assert.deepEqual(replay.partition, report.partition);
-  assert.equal(report.summary.total, 50);
+  assert.equal(report.summary.total, 100);
   assert.equal(replay.comparedCases, 10);
   assert.doesNotMatch(JSON.stringify(report), /FAB CITRUS SOAP|DemoVale Whole Wheat Flour/);
 });

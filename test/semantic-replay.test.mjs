@@ -108,9 +108,9 @@ test("replay fails closed if a case changes after replay binding", () => {
 test("offline command exposes only aggregate baseline and explicitly scripted scores", () => {
   const script = new URL("../scripts/eval-semantic.mjs", import.meta.url);
   const baseline = JSON.parse(execFileSync(process.execPath, [script.pathname], { encoding: "utf8" }));
-  assert.equal(baseline.summary.total, 50);
+  assert.equal(baseline.summary.total, 100);
   const compare = JSON.parse(execFileSync(process.execPath, [script.pathname, "--replay"], { encoding: "utf8" }));
-  assert.equal(compare.availableCases, 50);
+  assert.equal(compare.availableCases, 100);
   assert.equal(compare.comparedCases, 10);
   assert.equal(compare.exactAlias.summary.total, 10);
   assert.equal(compare.scripted.summary.total, 10);

@@ -1,0 +1,266 @@
+{
+  "synthetic": true,
+  "version": 3,
+  "items": [
+    {
+      "id": "item_fablemint_spinach_142",
+      "name": "Fablemint Baby Spinach 142g",
+      "aliases": [
+        "FAB SPIN 142"
+      ]
+    },
+    {
+      "id": "item_fablemint_spinach_312",
+      "name": "Fablemint Baby Spinach 312g",
+      "aliases": [
+        "FAB SPIN 312"
+      ]
+    },
+    {
+      "id": "item_fablemint_spring_mix_142",
+      "name": "Fablemint Spring Mix 142g",
+      "aliases": [
+        "FAB MIX 142"
+      ]
+    },
+    {
+      "id": "item_fablemint_oat_1l",
+      "name": "Fablemint Oat Drink 1L",
+      "aliases": [
+        "FAB OAT 1L"
+      ]
+    },
+    {
+      "id": "item_fablemint_oat_2l",
+      "name": "Fablemint Oat Drink 2L",
+      "aliases": [
+        "FAB OAT 2L"
+      ]
+    },
+    {
+      "id": "item_fablemint_soap_citrus",
+      "name": "Fablemint Citrus Soap",
+      "aliases": [
+        "FAB CITRUS SOAP"
+      ]
+    },
+    {
+      "id": "item_fablemint_soap_plain",
+      "name": "Fablemint Plain Soap",
+      "aliases": [
+        "FAB PLAIN SOAP"
+      ]
+    },
+    {
+      "id": "item_fablemint_litter_18kg",
+      "name": "Fablemint Cat Litter 18kg",
+      "aliases": [
+        "FAB LITTER 18KG"
+      ]
+    },
+    {
+      "id": "item_fablemint_litter_10kg",
+      "name": "Fablemint Cat Litter 10kg",
+      "aliases": [
+        "FAB LITTER 10KG"
+      ]
+    },
+    {
+      "id": "item_demovale_flour_1",
+      "name": "DemoVale Whole Wheat Flour 1kg",
+      "aliases": [
+        "DV WH FLOUR 1KG"
+      ]
+    },
+    {
+      "id": "item_demovale_flour_2",
+      "name": "DemoVale Whole Wheat Flour 2kg",
+      "aliases": [
+        "DV WH FLOUR 2KG"
+      ]
+    },
+    {
+      "id": "item_demovale_yog_plain",
+      "name": "DemoVale Plain Dairy Yogurt 500g",
+      "aliases": [
+        "DV YOG PLAIN 500"
+      ]
+    },
+    {
+      "id": "item_demovale_yog_vanilla",
+      "name": "DemoVale Vanilla Dairy Yogurt 500g",
+      "aliases": [
+        "DV YOG VAN 500"
+      ]
+    },
+    {
+      "id": "item_demovale_yog_plant",
+      "name": "DemoVale Plain Plant Yogurt 500g",
+      "aliases": [
+        "DV YOG PLANT 500"
+      ]
+    },
+    {
+      "id": "item_demovale_pasta_regular",
+      "name": "DemoVale Regular Pasta 454g",
+      "aliases": [
+        "DV PASTA REG 454"
+      ]
+    },
+    {
+      "id": "item_demovale_pasta_gf",
+      "name": "DemoVale Gluten Free Pasta 454g",
+      "aliases": [
+        "DV PASTA GF 454"
+      ]
+    },
+    {
+      "id": "item_demovale_juice_pulp",
+      "name": "DemoVale Orange Juice With Pulp 1L",
+      "aliases": [
+        "DV OJ PULP 1L"
+      ]
+    },
+    {
+      "id": "item_demovale_juice_nopulp",
+      "name": "DemoVale Orange Juice No Pulp 1L",
+      "aliases": [
+        "DV OJ NP 1L",
+        "DV OJ NO PULP 1L"
+      ]
+    },
+    {
+      "id": "item_demovale_battery_aa",
+      "name": "DemoVale AA Batteries 8 Pack",
+      "aliases": [
+        "DV BAT AA 8"
+      ]
+    },
+    {
+      "id": "item_demovale_battery_aaa",
+      "name": "DemoVale AAA Batteries 8 Pack",
+      "aliases": [
+        "DV BAT AAA 8"
+      ]
+    },
+    {
+      "id": "item_demovale_dish_20",
+      "name": "DemoVale Dish Tablets 20 Count",
+      "aliases": [
+        "DV DISH TAB 20"
+      ]
+    },
+    {
+      "id": "item_demovale_dish_40",
+      "name": "DemoVale Dish Tablets 40 Count",
+      "aliases": [
+        "DV DISH TAB 40"
+      ]
+    },
+    {
+      "id": "item_cloudpine_coffee_ground_340",
+      "name": "Cloudpine Medium Roast Ground Coffee 340g",
+      "aliases": [
+        "CP COFF GRND 340"
+      ]
+    },
+    {
+      "id": "item_cloudpine_coffee_whole_340",
+      "name": "Cloudpine Medium Roast Whole Bean Coffee 340g",
+      "aliases": [
+        "CP COFF BEAN 340"
+      ]
+    },
+    {
+      "id": "item_cloudpine_coffee_decaf_340",
+      "name": "Cloudpine Decaf Ground Coffee 340g",
+      "aliases": [
+        "CP COFF DCAF 340"
+      ]
+    },
+    {
+      "id": "item_cloudpine_rice_jasmine_1kg",
+      "name": "Cloudpine Jasmine Rice 1kg",
+      "aliases": [
+        "CP RICE JASM 1KG"
+      ]
+    },
+    {
+      "id": "item_cloudpine_rice_jasmine_2kg",
+      "name": "Cloudpine Jasmine Rice 2kg",
+      "aliases": [
+        "CP RICE JASM 2KG"
+      ]
+    },
+    {
+      "id": "item_cloudpine_rice_basmati_1kg",
+      "name": "Cloudpine Basmati Rice 1kg",
+      "aliases": [
+        "CP RICE BASM 1KG"
+      ]
+    },
+    {
+      "id": "item_cloudpine_soup_tomato_398",
+      "name": "Cloudpine Tomato Soup 398ml",
+      "aliases": [
+        "CP SOUP TOM 398"
+      ]
+    },
+    {
+      "id": "item_cloudpine_soup_tomato_low_398",
+      "name": "Cloudpine Low Sodium Tomato Soup 398ml",
+      "aliases": [
+        "CP SOUP TOM LS 398"
+      ]
+    },
+    {
+      "id": "item_cloudpine_soup_mushroom_398",
+      "name": "Cloudpine Mushroom Soup 398ml",
+      "aliases": [
+        "CP SOUP MUSH 398"
+      ]
+    },
+    {
+      "id": "item_cloudpine_cereal_oat_450",
+      "name": "Cloudpine Oat Rings Cereal 450g",
+      "aliases": [
+        "CP CEREAL OAT 450"
+      ]
+    },
+    {
+      "id": "item_cloudpine_cereal_oat_700",
+      "name": "Cloudpine Oat Rings Cereal 700g",
+      "aliases": [
+        "CP CEREAL OAT 700"
+      ]
+    },
+    {
+      "id": "item_cloudpine_cereal_choco_450",
+      "name": "Cloudpine Cocoa Rings Cereal 450g",
+      "aliases": [
+        "CP CEREAL COCOA 450"
+      ]
+    },
+    {
+      "id": "item_cloudpine_detergent_unscented_1l",
+      "name": "Cloudpine Unscented Laundry Liquid 1L",
+      "aliases": [
+        "CP LAUND UNSCENT 1L"
+      ]
+    },
+    {
+      "id": "item_cloudpine_detergent_unscented_2l",
+      "name": "Cloudpine Unscented Laundry Liquid 2L",
+      "aliases": [
+        "CP LAUND UNSCENT 2L"
+      ]
+    },
+    {
+      "id": "item_cloudpine_detergent_scented_1l",
+      "name": "Cloudpine Floral Laundry Liquid 1L",
+      "aliases": [
+        "CP LAUND FLORAL 1L"
+      ]
+    }
+  ]
+}
