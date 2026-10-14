@@ -55,6 +55,10 @@ test("family reassignment or manifest tampering cannot launder leakage", () => {
   casesWithWrongGoldGroup.find((c) => c.caseId === "oat_one_litre").familyId = "greens";
   assert.throws(() => check(casesWithWrongGoldGroup));
 
+  const casesWithUnknownFamily = structuredClone(cases);
+  casesWithUnknownFamily.find((c) => c.caseId === "oat_one_litre").familyId = "unregistered_family";
+  assert.throws(() => check(casesWithUnknownFamily));
+
   const missingFamily = structuredClone(manifest);
   delete missingFamily.catalogItemFamilies.item_fablemint_oat_1l;
   assert.throws(() => check(cases, missingFamily));
@@ -66,6 +70,10 @@ test("family reassignment or manifest tampering cannot launder leakage", () => {
   const missingSnapshot = structuredClone(manifest);
   missingSnapshot.frozenTestCases.pop();
   assert.throws(() => check(cases, missingSnapshot));
+
+  const extraSnapshot = structuredClone(manifest);
+  extraSnapshot.frozenTestCases.push(structuredClone(extraSnapshot.frozenTestCases[0]));
+  assert.throws(() => check(cases, extraSnapshot));
 });
 
 test("cross-split duplicate inputs and wrong-family no-match shortlists are rejected", () => {
