@@ -11,7 +11,7 @@ const FORBIDDEN_PRIVATE_PATHS = [
   /^\.private\//,
   /^private\//,
   /^data\/private\//,
-  /^receipts\/private\//,
+  /^receipts\//,
   /^exports\/private\//,
   /^imports\/receipts\//,
 ];
@@ -37,6 +37,9 @@ const PHONE_NUMBER = /(?:^|[^\d])(?:\+?1[ .-]?)?\(?[2-9]\d{2}\)?[ .-]\d{3}[ .-]\
 const CANADIAN_POSTAL_CODE = /\b[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTVWXYZ][ -]?\d[ABCEGHJ-NPRSTVWXYZ]\d\b/i;
 const STREET_ADDRESS = /\b\d{1,6}\s+[A-Z0-9][A-Z0-9.'-]*(?:\s+[A-Z0-9][A-Z0-9.'-]*){0,5}\s+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way|Place|Pl|Highway|Hwy)\b/i;
 const PRIVATE_URL = /\bhttps?:\/\/(?:10(?:\.\d{1,3}){3}|192\.168(?:\.\d{1,3}){2}|172\.(?:1[6-9]|2\d|3[01])(?:\.\d{1,3}){2}|100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])(?:\.\d{1,3}){2}|(?:[a-z0-9-]+\.)*(?:internal|lan|local|home))(?:[:/]\S*)?/i;
+// Never publish concrete private Google Workspace document/folder references.
+const PRIVATE_GOOGLE_WORKSPACE_URL = /\bhttps?:\/\/(?:drive\.google\.com\/(?:file\/d\/|drive\/folders\/)|docs\.google\.com\/(?:spreadsheets|document|presentation)\/d\/)[A-Za-z0-9_-]{20,}/i;
+
 
 function normalizePath(filePath) {
   return filePath.replaceAll("\\", "/").replace(/^\.\//, "");
@@ -94,6 +97,7 @@ export function scanText(filePath, text) {
   if (PHONE_NUMBER.test(text)) violations.add("personal-phone-number");
   if (CANADIAN_POSTAL_CODE.test(text) || STREET_ADDRESS.test(text)) violations.add("postal-address");
   if (PRIVATE_URL.test(text)) violations.add("private-internal-url");
+  if (PRIVATE_GOOGLE_WORKSPACE_URL.test(text)) violations.add("private-google-workspace-url");
 
   // Receipt-shaped fixture files are exempt only when they live in a designated
   // fixture directory and explicitly identify themselves as synthetic. Markdown

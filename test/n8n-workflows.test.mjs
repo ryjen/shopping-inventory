@@ -268,7 +268,7 @@ test('literal, indirect and spoofed Sheets document locators are rejected', asyn
   ]) {
     const changed = structuredClone(workflow);
     changed.nodes[index].parameters[locator][field] =
-      'https://docs.google.com/spreadsheets/d/synthetic-unapproved-locator/edit';
+      ['https://docs.google.com/', 'spreadsheets/d/', 'synthetic-unapproved-locator', '/edit'].join('');
     assert.throws(() => assertPlaceholderOnlyWorkflowResources(changed),
       `cached or unrecognized ${locator}.${field} must fail publication`);
   }

@@ -12,14 +12,15 @@ Real shopping data can reveal location, routines, spending, diet, health-adjacen
 | --- | --- | --- |
 | Source code, migrations, schemas, documentation | GitHub | Allowed |
 | Synthetic fixtures and generated test data | GitHub | Allowed |
-| Real receipt images and source files | Private Cloudflare R2 | Prohibited |
-| Real OCR or extraction payloads | Private R2 or D1, according to size and replay needs | Prohibited |
-| Purchase ledger, review state, stock, aliases, and budget output | Private Cloudflare D1 | Prohibited |
-| Credentials, resource identifiers, and access tokens | Cloudflare secrets or ignored private configuration | Prohibited |
+| Real receipt images and source files | Restricted Google Drive (current manual intake); private R2 (future service) | Prohibited |
+| Real OCR or extraction payloads | Restricted Google Drive/Sheet only for manual staging; private R2/D1 after service cutover | Prohibited |
+| Manual receipt ledger and extracted lines | Owner-restricted Google Sheet (current manual intake) | Prohibited |
+| Canonical authoritative purchases, review events, and derived state | Private Cloudflare D1 once deployed | Prohibited |
+| Credentials, private resource identifiers, and access tokens | Private secrets/configuration only | Prohibited |
 | Local development data | Ignored, encrypted local paths | Prohibited |
-| Google Sheets exports | Private, optional reporting/review surface | Prohibited |
+| Google Sheets exports | Private only | Prohibited |
 
-Cloudflare D1 is the preferred authoritative structured datastore. Cloudflare R2 is the preferred private evidence store. Access is mediated through an authenticated Worker. Buckets and databases must not be exposed directly.
+The owner-restricted Drive folder and Sheet are the current **manually controlled receipt intake destination**; they are not a replacement for canonical review/promotion transactions. Cloudflare D1/R2 and the authenticated Worker remain the planned application substrate. Never dual-write real receipts without an explicit reviewed migration/cutover. Do not publish private Drive/Sheet IDs or links in code, docs, issues, CI or logs. See [ADR-0008](../decisions/ADR-0008-private-google-workspace-receipt-intake.md).
 
 ## Public fixture requirements
 
@@ -62,7 +63,7 @@ Private local files should be encrypted at rest when retained. Test and developm
 
 Receipt images should be retained only as long as they are needed for extraction, review, dispute resolution, or audit. Structured purchase history may be retained longer when it serves the inventory or budgeting workflow.
 
-Deletion must cover both the R2 object and its D1 metadata or tombstone state. Backups and exports must follow the same private-storage requirements.
+Deletion of manually staged data must cover the private Drive file, the corresponding private Sheet rows, trash and retained copies as appropriate; once the Worker substrate is deployed, it must cover both R2 and D1 records. Backups and exports must follow the same private-storage requirements.
 
 ## Contribution gate
 
