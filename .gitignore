@@ -20,3 +20,8 @@ wrangler.private.toml
 # Node
 node_modules/
 npm-debug.log*
+
+# Local, short-lived Git worktrees
+.worktrees/
+/receipts/
+/imports/receipts/

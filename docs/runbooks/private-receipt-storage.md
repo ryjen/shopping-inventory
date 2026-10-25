@@ -2,6 +2,8 @@
 
 This runbook applies whenever a receipt or order contains real household data.
 
+For the currently deployed manual receipt destination, follow [Private Google Workspace receipt intake](google-workspace-receipt-intake.md), not the unprovisioned Worker API described below.
+
 See [Private Data Policy](../security/private-data-policy.md) and [Cloudflare private storage](../architecture/cloudflare-private-storage.md).
 
 ## Required boundary

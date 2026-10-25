@@ -15,7 +15,13 @@ This repository is public and contains only:
 
 Real receipts, OCR payloads, purchase history, stock state, budget outputs, credentials, and household data must not be committed.
 
-The private operating substrate is:
+## Live personal-data location
+
+Until a private Cloudflare deployment is commissioned, actual household receipt files live in an owner-only Google Drive folder and manual receipt/line-item staging lives in an owner-only Google Sheet. No Drive IDs, sharing links, document IDs, transactions, or screenshots are stored in Git. This **interim manual intake** is not the canonical purchase-promotion API; structured automation must not silently promote rows to authoritative purchases.
+
+See [ADR-0008](docs/decisions/ADR-0008-private-google-workspace-receipt-intake.md) and [Google Workspace receipt intake](docs/runbooks/google-workspace-receipt-intake.md).
+
+The planned canonical application substrate is:
 
 ```mermaid
 flowchart LR
@@ -28,7 +34,7 @@ flowchart LR
 - **Cloudflare D1** is the preferred authoritative structured datastore.
 - **Cloudflare R2** stores private receipt images and large source payloads.
 - **Cloudflare Worker** is the authenticated application/API boundary.
-- **Google Sheets** may be used as an optional export or review surface, but is not authoritative.
+- **Google Sheets / Drive** are the currently provisioned private manual receipt workspace, not a canonical automated purchase authority.
 - **CSV and SQLite-compatible exports** preserve portability and recovery.
 
 See [ADR-0006](docs/decisions/ADR-0006-public-code-private-cloudflare-substrate.md), [Private Data Policy](docs/security/private-data-policy.md), and [Private Receipt Storage Runbook](docs/runbooks/private-receipt-storage.md).
@@ -122,6 +128,8 @@ Production credentials and Cloudflare resource identifiers must remain outside t
 
 - [Architecture](docs/architecture.md)
 - [ADR-0006: private Cloudflare operating substrate](docs/decisions/ADR-0006-public-code-private-cloudflare-substrate.md)
+- [ADR-0008: private Google Workspace manual receipt intake](docs/decisions/ADR-0008-private-google-workspace-receipt-intake.md)
+- [Private Google Workspace receipt intake runbook](docs/runbooks/google-workspace-receipt-intake.md)
 - [Private Data Policy](docs/security/private-data-policy.md)
 - [Threat model and privacy considerations](docs/security/threat-model-and-privacy.md)
 - [Security reporting policy](SECURITY.md)

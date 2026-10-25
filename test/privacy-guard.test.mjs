@@ -145,3 +145,17 @@ test("ordinary source and documentation text is unaffected", () => {
     [],
   );
 });
+
+test("private receipt import paths are never publishable", () => {
+  assert.deepEqual(scanText("receipts/scan.json", "{}"), ["prohibited-private-path"]);
+});
+
+test("rejects concrete Google Sheet, file and folder URLs", () => {
+  const id = join("1A2B3C4D5E6F7G8H9I", "JkLmNoPq123");
+  const sheet = join("https://docs.google.com/", "spreadsheets/d/", id, "/edit");
+  const file = join("https://drive.google.com/", "file/d/", id, "/view");
+  const folder = join("https://drive.google.com/", "drive/folders/", id);
+  for (const privateUrl of [sheet, file, folder]) {
+    assert.deepEqual(scanText("docs/example.md", privateUrl), ["private-google-workspace-url"]);
+  }
+});

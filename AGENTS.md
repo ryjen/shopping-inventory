@@ -10,7 +10,7 @@ This rule applies before repository mutation. CI is defense in depth; a public b
 
 When handling real data:
 
-1. Send receipt evidence only to the authenticated private Worker / D1 / R2 path defined by the project.
+1. Until the Worker/D1/R2 deployment is approved, put original receipts only in the owner-restricted Google Drive receipt folder and manually staged records only in the owner-restricted Google Sheet. Do not put any real data or private file IDs/links in this repository. Once the authenticated Worker/D1/R2 ingestion path is deployed, use the approved cutover flow instead.
 2. If the private service is unavailable, use an ignored encrypted local path such as `.private/`; do not use Git as a queue or fallback datastore.
 3. If a regression fixture is needed, construct a materially synthetic case before any GitHub mutation. Invent the merchant, identifiers, timestamp, basket, quantities, prices, and totals while preserving only the structural parsing problem.
 4. Never copy a real payload into a prompt-authored repository file merely to test the privacy scanner.
