@@ -79,8 +79,8 @@ The repository includes:
 
 The active milestone is **security and operational hardening**:
 
-1. complete remaining privacy/supply-chain security controls;
-2. provision/operate the private Cloudflare environment with retention and recovery controls;
+1. maintain completed repository security controls (#16) and resolve GitHub-retained historical incident views (#10);
+2. provision/operate the private Cloudflare environment with retention and recovery controls (#18);
 3. expand the synthetic evaluation corpus after the integrity/security contracts are stable;
 4. begin downstream ingestion/recommendation/export work only through the canonical private substrate.
 
@@ -138,6 +138,7 @@ Production credentials and Cloudflare resource identifiers must remain outside t
 - [Public data incident response](docs/runbooks/public-data-incident-response.md)
 - [Cloudflare private storage](docs/architecture/cloudflare-private-storage.md)
 - [Private receipt storage runbook](docs/runbooks/private-receipt-storage.md)
+- [Private Cloudflare release and recovery operator gate](docs/runbooks/private-cloudflare-release.md)
 
 ### Data contracts and behavior
 
