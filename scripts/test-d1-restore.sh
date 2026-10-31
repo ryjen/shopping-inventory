@@ -33,10 +33,16 @@ test -s "$TEMP_ROOT/synthetic-d1.sql" || {
   exit 1
 }
 
+# Wrangler's alphabetical SQL dump emits child rows before the parent
+# composite-unique index exists. Normalize only this synthetic test export:
+# tables -> indexes -> dependency-ordered rows -> immutable triggers.
+python3 "$REPO_ROOT/scripts/normalize-synthetic-d1-export.py" \
+  "$TEMP_ROOT/synthetic-d1.sql" "$TEMP_ROOT/replay.sql"
+
 # Restore into a different isolated local D1 instance, not the source.
 echo "d1-restore: import into isolated recovery database"
 "$WRANGLER" d1 execute "$DB_NAME" --local --cwd "$TEMP_ROOT/recovered" \
-  --file "$TEMP_ROOT/synthetic-d1.sql" >/dev/null
+  --file "$TEMP_ROOT/replay.sql" >/dev/null
 "$WRANGLER" d1 execute "$DB_NAME" --local --cwd "$TEMP_ROOT/recovered" \
   --command "SELECT CASE WHEN
      (SELECT COUNT(*) FROM purchases WHERE purchase_id = 'purchase_syn_operator') = 1
