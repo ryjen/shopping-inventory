@@ -1,3 +1,5 @@
+import { handleReviewApi } from "./review-api.mjs";
+
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
   "cache-control": "private, no-store",
@@ -48,11 +50,19 @@ function timingSafeEqualString(left, right) {
   return difference === 0;
 }
 
-function authorized(request, env) {
-  const expected = env.API_TOKEN;
-  if (!expected) return false;
+function tokenMatches(request, expected) {
+  if (typeof expected !== "string" || expected.length === 0) return false;
   const auth = request.headers.get("authorization") ?? "";
   return timingSafeEqualString(auth, `Bearer ${expected}`);
+}
+
+function authorized(request, env) {
+  return tokenMatches(request, env.API_TOKEN) || tokenMatches(request, env.OWNER_TOKEN);
+}
+
+function ownerOnlyPath(path) {
+  return path.startsWith("/v1/review/") || path === "/v1/purchases" ||
+    path === "/v1/purchase-candidates";
 }
 
 function isPlainObject(value) {
@@ -602,6 +612,11 @@ export default {
     if (!authorized(request, env)) return json(401, { error: "unauthorized" });
 
     const url = new URL(request.url);
+    if (ownerOnlyPath(url.pathname) &&
+      (!env.OWNER_TOKEN || env.OWNER_TOKEN === env.API_TOKEN ||
+        !tokenMatches(request, env.OWNER_TOKEN))) {
+      return json(403, { error: "owner_authorization_required" });
+    }
     if (request.method === "POST" && url.pathname === "/v1/receipts") {
       return handleReceiptUpload(request, env);
     }
@@ -618,6 +633,9 @@ export default {
     if (request.method === "GET" && url.pathname === "/health") {
       return json(200, { status: "ok", environment: env.ENVIRONMENT ?? "unknown" });
     }
+
+    const reviewResponse = await handleReviewApi(request, env);
+    if (reviewResponse) return reviewResponse;
 
     return json(404, { error: "not_found" });
   },

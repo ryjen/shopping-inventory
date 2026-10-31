@@ -63,7 +63,7 @@ Do **not** use `wrangler.toml` for deployment. Use `--config wrangler.private.to
 ## 4. Provision, verify, and deploy (requires authorized operator)
 
 - Create named D1/R2 resources only after spending/operations authorization. Verify name and binding match the private config.
-- Use the Cloudflare secret mechanism (`npx wrangler secret put API_TOKEN --config wrangler.private.toml`) and a private high-entropy bearer token with secure local storage; do not print it in terminals or logs. Check only the secret **name** exists. Plan rotation/revocation.
+- Provision **two distinct, high-entropy secrets** using Cloudflare's secret mechanism: `API_TOKEN` (evidence ingestion) and `OWNER_TOKEN` (review/duplicate decisions, candidate/purchase promotion). For example, use `npx wrangler secret put API_TOKEN --config wrangler.private.toml` and `npx wrangler secret put OWNER_TOKEN --config wrangler.private.toml`. Never print either token in terminals/logs or place them in TOML. **Equal/missing owner secrets fail closed** for privileged endpoints. Record names only; plan separate rotation/revocation. See [private review operations](private-review-operations.md).
 - Dry-run deployment successfully, apply D1 migrations in the intended environment with `npx wrangler d1 migrations apply DB --remote --config wrangler.private.toml`, then deploy with `npx wrangler deploy --config wrangler.private.toml`. Record the deployed version/hash privately.
 - Enforce an appropriate rate/abuse boundary for the authenticated personal endpoint. A static bearer token is the current minimum, not a multi-user authorization system.
 - Run private *synthetic* smoke against the actual route: no-token and bad-token requests return unauthorized; valid token can write a synthetic image/PDF and stage a synthetic extraction; retry is idempotent; altered-payload ID reuse conflicts; invalid input cannot create purchases; evidence retrieval requires authentication. Do not put tokens or response payloads in public evidence.
@@ -82,4 +82,4 @@ Before calling #18 complete:
 
 ## Known implementation boundary
 
-The Worker currently exposes evidence upload/retrieval and extraction staging, not a complete authenticated human review UI or full online purchase approval workflow. The deterministic review/purchase/stock/budget/recommendation vertical slice is synthetic and local. Do not claim a usable end-to-end household release based solely on successful intake.
+The Worker exposes receipt intake plus an owner-only review/promotion API after the associated reviewed change is deployed. There is **no browser UI**, retailer mail ingestion, or real household end-to-end qualification. Derived stock, budget, and recommendation flows remain synthetic/local; receipt intake alone does not make the application a complete household product. A real release requires first-hand validation of the [private review operation](private-review-operations.md) after deployment.

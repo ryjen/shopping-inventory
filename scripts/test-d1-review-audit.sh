@@ -27,6 +27,8 @@ expect_failure() {
 
 run_sql test/fixtures/d1/review-audit-positive.sql >/dev/null
 echo "review-audit-d1: append-only review and purchase audit path: passed"
+run_sql test/fixtures/d1/review-operator-path.synthetic.sql >/dev/null
+echo "review-audit-d1: private operator SQL promotion path: passed"
 
 expect_failure "direct candidate state rewrite" test/fixtures/d1/review-direct-state-negative.sql
 expect_failure "invalid candidate transition" test/fixtures/d1/review-invalid-transition-negative.sql

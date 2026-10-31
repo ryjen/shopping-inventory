@@ -25,8 +25,13 @@ flowchart LR
 - `POST /v1/receipts` — store receipt evidence in R2 plus D1 evidence metadata; exact byte-identical active evidence is idempotent
 - `GET /v1/evidence/:evidenceId` — retrieve evidence through the Worker
 - `POST /v1/receipt-extractions` — validate and stage a canonical extraction envelope plus raw rows
+- `GET /v1/review/raw`, `/v1/review/candidates`, `/v1/review/duplicates` — owner-only private review queues
+- `GET /v1/review/duplicates/:envelopeId/peers` — owner-only collision comparison
+- `POST /v1/review/raw/:importId`, `/v1/review/candidates/:candidateId`, `/v1/review/duplicates/:envelopeId` — append-only owner decisions
+- `POST /v1/purchase-candidates`, `/v1/purchases` — human-proposed normalization and D1-enforced acquisition promotion
+- `GET /v1/purchases` — owner-only current purchases
 
-Every endpoint requires bearer authentication. Evidence object keys and API responses use opaque identifiers.
+Every endpoint requires bearer authentication. Review/purchase endpoints require a distinct `OWNER_TOKEN` secret (separate from ingestion `API_TOKEN`), and cannot be exercised by ingestion-only automation. Evidence object keys and mutation responses use opaque identifiers. Review queues return private line/purchase details only to the authenticated owner. See [owner review operations](../runbooks/private-review-operations.md).
 
 ## Exact receipt evidence identity
 

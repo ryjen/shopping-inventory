@@ -70,6 +70,7 @@ The repository includes:
 
 - repository-wide privacy validation and pre-write agent guardrails;
 - authenticated Cloudflare Worker receipt evidence and structured staging endpoints;
+- owner-only, separate-token API for raw review, transaction-duplicate decisions, candidate approval and authoritative purchase promotion (no browser UI);
 - private R2 receipt upload/retrieval with opaque keys;
 - D1 migrations for evidence, structured raw staging, append-only review/audit events, purchase candidates, and immutable authoritative purchases;
 - versioned JSON Schema contracts for receipt → purchase plus derived stock/budget/recommendation outputs;
@@ -139,6 +140,7 @@ Production credentials and Cloudflare resource identifiers must remain outside t
 - [Cloudflare private storage](docs/architecture/cloudflare-private-storage.md)
 - [Private receipt storage runbook](docs/runbooks/private-receipt-storage.md)
 - [Private Cloudflare release and recovery operator gate](docs/runbooks/private-cloudflare-release.md)
+- [Owner-only review, duplicate resolution and purchase promotion API](docs/runbooks/private-review-operations.md)
 
 ### Data contracts and behavior
 
