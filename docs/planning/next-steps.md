@@ -76,7 +76,7 @@ These must consume the Worker/D1/R2 canonical/private substrate and must not int
 
 ## Current priority (2026-10-30)
 
-1. **#18 (P1):** obtain explicit operating/spending authorization, provision isolated private D1/R2, deploy an authenticated Worker, prove synthetic live negative/positive smoke, and validate export/restore, retention and credentials. `node scripts/private-config-preflight.mjs <ignored-private-config> development` validates only local fail-closed setup; follow the operator runbook for remote evidence. No production claim before those gates.
+1. **#18 (P1):** obtain explicit operating/spending authorization, provision isolated private D1/R2, deploy an authenticated Worker, prove synthetic live negative/positive smoke, and validate **remote** export/restore, retention and credentials. Offline D1 synthetic export/restore verification is in CI; it cannot qualify a production recovery drill. `node scripts/private-config-preflight.mjs <ignored-private-config> development` validates only local fail-closed setup; follow the operator runbook for remote evidence. No production claim before those gates.
 2. **#10 (privacy):** submit the private GitHub Support request to purge server-retained historical private PR/commit views; don't force-push otherwise clean history.
 3. **Review usability (release-dependent):** the synthetic review/purchase flow does not expose a complete deployed human review interface. Deliver that after private staging operates; do not silently promote imported Sheet rows.
 4. **#4 (P2):** finish remaining synthetic OCR/reprocessing/budget/stock corpus, without delaying deployment.

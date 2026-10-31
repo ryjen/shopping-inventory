@@ -56,6 +56,9 @@ jobs:
       - name: Exercise duplicate and reprocessing D1 invariants
         run: npm run test:d1:duplicates
 
+      - name: Prove synthetic D1 export and isolated restore
+        run: npm run test:d1:restore
+
   n8n-cli-import-smoke-test:
     name: n8n CLI import smoke test
     runs-on: ubuntu-latest
