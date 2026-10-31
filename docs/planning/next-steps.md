@@ -1,6 +1,6 @@
 # Next Steps
 
-The repository has completed the architecture, provenance, validation, exact-evidence identity, and conservative transaction duplicate/reprocessing foundations. The active work is now security/supply-chain hardening and private operational readiness before broader product expansion.
+The repository has completed the architecture, provenance, validation, exact-evidence identity, conservative transaction duplicate/reprocessing, and repository-side security hardening (#16, closed 2026-10-13). **#18 private Cloudflare operational readiness is the critical release blocker.** The connected account has no Shopping Inventory-specific D1/R2 resources as of 2026-10-30. The current private Google Drive/Sheets workspace is manual staging, not the deployed canonical service. Follow [the operator release gate](../runbooks/private-cloudflare-release.md); do not claim the product deployed until the live negative/positive, recovery and authorization gates pass. Historical GitHub PR/commit references still require private GitHub Support follow-up under #10.
 
 ## Completed foundation
 
@@ -21,7 +21,7 @@ Merged repository work provides:
 
 These are implementation contracts, not remaining planning tasks.
 
-## P1 repository security track — #16
+## Completed P1 repository security track — #16 (closed 2026-10-13)
 
 Outcome:
 
@@ -74,15 +74,12 @@ Downstream work remains:
 
 These must consume the Worker/D1/R2 canonical/private substrate and must not introduce parallel authoritative Sheets or direct integration writes.
 
-## Current priority
+## Current priority (2026-10-30)
 
-For repository-only work:
+1. **#18 (P1):** obtain explicit operating/spending authorization, provision isolated private D1/R2, deploy an authenticated Worker, prove synthetic live negative/positive smoke, and validate export/restore, retention and credentials. `node scripts/private-config-preflight.mjs <ignored-private-config> development` validates only local fail-closed setup; follow the operator runbook for remote evidence. No production claim before those gates.
+2. **#10 (privacy):** submit the private GitHub Support request to purge server-retained historical private PR/commit views; don't force-push otherwise clean history.
+3. **Review usability (release-dependent):** the synthetic review/purchase flow does not expose a complete deployed human review interface. Deliver that after private staging operates; do not silently promote imported Sheet rows.
+4. **#4 (P2):** finish remaining synthetic OCR/reprocessing/budget/stock corpus, without delaying deployment.
+5. **#23–#26 (P2):** Gmail intake, explained shopping recommendations, meal planning and budget export consume only the canonical private substrate after #18.
 
-1. #16 security/supply-chain hardening
-2. #4 evaluation corpus expansion after #16's core reproducibility/security gates
-
-For private operations:
-
-1. #18 can proceed in parallel with repository-only #16 work
-
-Product issues #23–#26 remain P2 until the P1 security/operational boundary is ready.
+#16 is closed. #42 is experimental/advisory, and #43 is deferred research—not release dependencies.
