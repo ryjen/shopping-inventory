@@ -172,7 +172,8 @@ test("human review→candidate→candidate approval→purchase with retry remain
   assert.deepEqual(db.state.events.map(x => x.toState), ["approved", "approved"]);
   assert.ok(db.state.statements.some(x => x.sql.includes("INSERT INTO purchases") &&
     x.sql.includes("candidate.review_state = 'approved'") &&
-    x.sql.includes("envelope.duplicate_state IN ('clear', 'distinct')")));
+    x.sql.includes("envelope.duplicate_state IN ('clear', 'distinct')") &&
+    x.sql.includes("prior_candidate.source_import_id = candidate.source_import_id")));
 });
 
 test("duplicate decisions explicitly gate purchase/candidate creation", async () => {

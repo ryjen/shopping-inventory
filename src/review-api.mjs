@@ -67,8 +67,12 @@ async function readJson(request) {
 async function listQueue(env, kind, limit) {
   const raw = kind === SOURCE_STATE.RAW;
   const query = raw
-    ? `SELECT raw.import_id AS id, raw.envelope_id AS envelopeId, raw.line_number AS lineNumber,
-       raw.line_type AS lineType, raw.raw_text AS rawText, raw.quantity, raw.unit,
+    ? `SELECT raw.import_id AS id, raw.envelope_id AS envelopeId,
+       envelope.evidence_id AS evidenceId,
+       json_extract(envelope.payload_json, '$.merchant_raw') AS merchant,
+       json_extract(envelope.payload_json, '$.purchased_at') AS purchasedAt,
+       raw.line_number AS lineNumber, raw.line_type AS lineType,
+       raw.raw_text AS rawText, raw.quantity, raw.unit,
        raw.extended_price AS amount, raw.review_state AS reviewState,
        raw.review_version AS reviewVersion, envelope.duplicate_state AS duplicateState
        FROM import_raw_rows raw JOIN receipt_extraction_envelopes envelope
@@ -274,9 +278,19 @@ async function createPurchase(env, input) {
        JOIN import_raw_rows raw ON raw.import_id = candidate.source_import_id
        JOIN receipt_extraction_envelopes envelope ON envelope.envelope_id = raw.envelope_id
        WHERE candidate.candidate_id = ? AND candidate.review_state = 'approved'
-         AND envelope.duplicate_state IN ('clear', 'distinct')`,
+         AND envelope.duplicate_state IN ('clear', 'distinct')
+         AND (? IS NULL OR EXISTS (
+           SELECT 1 FROM purchases prior_purchase
+           JOIN purchase_candidates prior_candidate
+             ON prior_candidate.candidate_id = prior_purchase.source_candidate_id
+           WHERE prior_purchase.purchase_id = ?
+             AND prior_candidate.source_import_id = candidate.source_import_id
+             AND NOT EXISTS (SELECT 1 FROM purchases successor
+                             WHERE successor.supersedes_id = prior_purchase.purchase_id)
+         ))`,
     ).bind(purchaseId, input.supersedesId ?? null, new Date().toISOString(), ACTOR_ID,
-      crypto.randomUUID(), input.candidateId).run();
+      crypto.randomUUID(), input.candidateId, input.supersedesId ?? null,
+      input.supersedesId ?? null).run();
     if (result.success === false) throw new Error("purchase write failed");
     if (result.meta?.changes !== 1) return json(409, { error: "not_eligible" });
     return json(201, { purchaseId, idempotent: false });
