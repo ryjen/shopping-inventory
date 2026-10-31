@@ -99,6 +99,12 @@ if __name__ == "__main__":
         sys.exit("usage: normalize-synthetic-d1-export.py SOURCE.sql OUTPUT.sql")
     try:
         normalize(Path(sys.argv[1]), Path(sys.argv[2]))
-    except (ValueError, OSError, sqlite3.DatabaseError):
-        sys.exit("d1-restore: synthetic export normalization rejected")
+    except ValueError as error:
+        # All ValueError messages above are controlled categories, not SQL data.
+        sys.exit("d1-restore: synthetic normalization rejected: " + str(error))
+    except (OSError, sqlite3.DatabaseError) as error:
+        # Do not print exception content (which can include SQL fragments).
+        code = getattr(error, "sqlite_errorname", None)
+        sys.exit("d1-restore: synthetic normalization rejected: " +
+                 str(code if code else type(error).__name__))
     print("d1-restore: synthetic SQL order and SQLite integrity verified")
