@@ -42,7 +42,10 @@ def normalize(source: Path, destination: Path) -> None:
     tables, rows, indexes, triggers = {}, {}, [], []
     for statement in original.iterdump():
         statement = statement.strip()
-        if statement in ("BEGIN TRANSACTION;", "COMMIT;"):
+        if statement in ("BEGIN TRANSACTION;", "COMMIT;",
+                         'DELETE FROM "sqlite_sequence";'):
+            # SQLite internally tracks AUTOINCREMENT next IDs. Explicit
+            # restored migration IDs rebuild the sequence automatically.
             continue
         table = CREATE_TABLE.match(statement)
         insert = INSERT.match(statement)
@@ -53,6 +56,10 @@ def normalize(source: Path, destination: Path) -> None:
             tables[name] = statement
         elif insert:
             name = insert.group(1) or insert.group(2)
+            if name == "sqlite_sequence":
+                # Never replay internal sequence rows; explicit IDs restore
+                # the maximum counters, preserving future insert uniqueness.
+                continue
             if name not in TABLE_ORDER:
                 raise ValueError("unknown data table")
             rows.setdefault(name, []).append(statement)
