@@ -18,11 +18,14 @@ cp "$REPO_ROOT/wrangler.toml" "$TEMP_ROOT/recovered/wrangler.toml"
 cp -R "$REPO_ROOT/migrations" "$TEMP_ROOT/source/migrations"
 
 # Populate ONLY a throwaway local database with invented transactions.
+echo "d1-restore: create synthetic source schema"
 "$WRANGLER" d1 migrations apply "$DB_NAME" --local --cwd "$TEMP_ROOT/source" >/dev/null
+echo "d1-restore: seed invented purchase and review events"
 "$WRANGLER" d1 execute "$DB_NAME" --local --cwd "$TEMP_ROOT/source" \
   --file "$REPO_ROOT/test/fixtures/d1/review-operator-path.synthetic.sql" >/dev/null
 
 # The export is SQL, not a storage backup of separate R2 object evidence.
+echo "d1-restore: export synthetic source"
 "$WRANGLER" d1 export "$DB_NAME" --local --cwd "$TEMP_ROOT/source" \
   --output "$TEMP_ROOT/synthetic-d1.sql" --skip-confirmation >/dev/null
 test -s "$TEMP_ROOT/synthetic-d1.sql" || {
@@ -31,6 +34,7 @@ test -s "$TEMP_ROOT/synthetic-d1.sql" || {
 }
 
 # Restore into a different isolated local D1 instance, not the source.
+echo "d1-restore: import into isolated recovery database"
 "$WRANGLER" d1 execute "$DB_NAME" --local --cwd "$TEMP_ROOT/recovered" \
   --file "$TEMP_ROOT/synthetic-d1.sql" >/dev/null
 "$WRANGLER" d1 execute "$DB_NAME" --local --cwd "$TEMP_ROOT/recovered" \
